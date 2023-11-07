@@ -1,8 +1,17 @@
 # Advanced Machine Learning Final Project
 
+## Setup
+
+Loading the data automatically requires programmatic access to AWS S3 bucket.
+
+1. Install awscli depending on your operating system (Check [AWS Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)).
+2. Run `aws configure` in terminal and set up credentials.
+
+After this you can run the `load_data_from_aws_s3.py` script which will download the data from the bucket into a data directory.
+
 ## Tagging music sequences.
 
-![](mp_musictag.png)
+![](assets/mp_musictag.png)
 
 Music plays an important role in our lives, while the landscape of contemporary music is vast. In order to understand music taste and build recommender systems for music, we need to learn to tag music first. In this project, we want to build a classifier that can tag music pieces with a genre or category after listening to an arbitrary long example. For this, we want to consider the following datsets:
 - [GTZAN](https://www.kaggle.com/datasets/andradaolteanu/gtzan-dataset-music-genre-classification)
