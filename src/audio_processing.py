@@ -35,7 +35,7 @@ def mfcc(audio, sample_rate, n_mfcc=13, n_fft=2048, hop_length=512):
 
 
 # Test for read_audio function
-file_path = '../data/gtzan_data/genres_original/classical/classical.00000.wav'
+file_path = '../data/raw/gtzan_data/genres_original/classical/classical.00000.wav'
 audio, sample_rate = read_audio(file_path, sample_rate=22050)
 print(f"Audio Tensor: {audio.shape}, Sample Rate: {sample_rate}")
 
