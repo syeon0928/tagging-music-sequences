@@ -3,3 +3,9 @@ pandas
 numpy
 jupyter
 tqdm
+pydub
+librosa
+torch
+torchvision
+torchaudio
+matplotlib
