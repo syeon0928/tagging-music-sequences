@@ -1,3 +1,6 @@
+# dont ignore label csv
+!label.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
