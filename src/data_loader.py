@@ -1,34 +1,30 @@
 from torch.utils.data import DataLoader, Dataset, random_split
-from audio_util import *
+from src.audio_util import *
 import torchaudio
 
-# ----------------------------
-# Sound Dataset
-# ----------------------------
+# Custom dataset class (derived from torch)
 class SoundDS(Dataset):
-    def __init__(self, df, data_path):
+    def __init__(self, df, data_path, class_columns):
         self.df = df
         self.data_path = str(data_path)
+        self.class_columns = class_columns
         self.duration = 4000
         self.sr = 44100
         self.channel = 2
         self.shift_pct = 0.4
 
-    # ----------------------------
     # Number of items in dataset
-    # ----------------------------
     def __len__(self):
         return len(self.df)
 
-        # ----------------------------
     # Get i'th item in dataset
-    # ----------------------------
     def __getitem__(self, idx):
-        # Absolute file path of the audio file - concatenate the audio directory with
-        # the relative path
-        audio_file = self.data_path + self.df.loc[idx, 'relative_path']
-        # Get the Class ID
-        class_id = self.df.loc[idx, 'classID']
+        # Absolute file path of the audio file - concatenate the audio directory with the relative path
+        audio_file = self.data_path + '/' + self.df.loc[idx, 'filepath']
+
+        # Retrieve all class label columns for the row
+        class_row = self.df.loc[idx, self.class_columns].astype(int).values
+        class_tensor = torch.FloatTensor(class_row)
 
         aud = AudioUtil.open(audio_file)
         # Some sounds have a higher sample rate, or fewer channels compared to the
@@ -41,7 +37,7 @@ class SoundDS(Dataset):
 
         dur_aud = AudioUtil.pad_trunc(rechan, self.duration)
         shift_aud = AudioUtil.time_shift(dur_aud, self.shift_pct)
-        sgram = AudioUtil.spectro_gram(shift_aud, n_mels=64, n_fft=1024, hop_len=None)
+        sgram = AudioUtil.mel_spectro_gram_with_db(shift_aud, n_mels=64, n_fft=1024, hop_len=None)
         aug_sgram = AudioUtil.spectro_augment(sgram, max_mask_pct=0.1, n_freq_masks=2, n_time_masks=2)
 
-        return aug_sgram, class_id
+        return aug_sgram, class_tensor

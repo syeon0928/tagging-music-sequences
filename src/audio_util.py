@@ -95,7 +95,7 @@ class AudioUtil():
     # Generate a Spectrogram
     # ----------------------------
     @staticmethod
-    def spectro_gram(aud, n_mels=64, n_fft=1024, hop_len=None):
+    def mel_spectro_gram_with_db(aud, n_mels=64, n_fft=1024, hop_len=None):
         sig,sr = aud
         top_db = 80
 
