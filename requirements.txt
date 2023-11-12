@@ -1,7 +1,7 @@
-boto3
 pandas
 numpy
 jupyter
+ipykernel
 tqdm
 pydub
 librosa
@@ -9,3 +9,5 @@ torch
 torchvision
 torchaudio
 matplotlib
+seaborn
+scikit-learn
