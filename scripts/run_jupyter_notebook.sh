@@ -34,7 +34,6 @@ localhost:${port}  (prefix w/ https:// if using password)
 # update the $CONDAENV here to match the environment created earlier
 module load Anaconda3
 source activate aml-project
-pip install jupyter ipykernel
 
 # Start the server
 cd ../

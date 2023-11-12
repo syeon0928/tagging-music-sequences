@@ -11,15 +11,21 @@ class AudioUtil():
     @staticmethod
     def open(audio_file):
         signal, sampling_rate = torchaudio.load(audio_file)
-        return (signal, sampling_rate)
+        return signal, sampling_rate
 
     @staticmethod
-    def get_audio_channels(audio_file):
-        # Load audio file
-        signal, sampling_rate = torchaudio.load(audio_file)
-        # Get the number of channels
+    def get_audio_channels(aud):
+        signal, sampling_rate = aud
         num_channels = signal.shape[0]  # The shape is (num_channels, num_samples)
         return num_channels
+
+    @staticmethod
+    def get_audio_duration(aud):
+        signal, sampling_rate = aud
+
+        num_samples = signal.shape[1]
+        duration_seconds = num_samples / sampling_rate
+        return duration_seconds
 
     # ----------------------------
     # Convert the given audio to the desired number of channels
@@ -28,18 +34,18 @@ class AudioUtil():
     def rechannel(aud, new_channel):
         signal, sampling_rate = aud
 
-        if (signal.shape[0] == new_channel):
+        if signal.shape[0] == new_channel:
             # Nothing to do
             return aud
 
-        if (new_channel == 1):
+        if new_channel == 1:
             # Convert from stereo to mono by selecting only the first channel
             resampled_signal = signal[:1, :]
         else:
             # Convert from mono to stereo by duplicating the first channel
             resampled_signal = torch.cat([signal, signal])
 
-        return ((resampled_signal, sampling_rate))
+        return resampled_signal, sampling_rate
 
     # ----------------------------
     # Since Resample applies to a single channel, we resample one channel at a time
@@ -48,35 +54,35 @@ class AudioUtil():
     def resample(aud, new_sampling_rate):
         signal, sampling_rate = aud
 
-        if (sampling_rate == new_sampling_rate):
+        if sampling_rate == new_sampling_rate:
             # Nothing to do
             return aud
 
         num_channels = signal.shape[0]
         # Resample first channel
         resampled_signal = torchaudio.transforms.Resample(sampling_rate, new_sampling_rate)(signal[:1,:])
-        if (num_channels > 1):
+        if num_channels > 1:
             # Resample the second channel and merge both channels
             resample_second_channel = torchaudio.transforms.Resample(sampling_rate, new_sampling_rate)(signal[1:,:])
             resampled_signal = torch.cat([resampled_signal, resample_second_channel])
 
-        return ((resampled_signal, new_sampling_rate))
+        return resampled_signal, new_sampling_rate
 
     # ----------------------------
-    # Pad (or truncate) the signal to a fixed length 'max_ms' in milliseconds
+    # Pad (or truncate) the signal to a fixed length 'max_s' in seconds
     # ----------------------------
     @staticmethod
-    def pad_trunc(aud, max_ms):
+    def fix_audio_length(aud, max_s):
         signal, sampling_rate = aud
         num_rows, signal_len = signal.shape
-        max_len = sampling_rate//1000 * max_ms
+        max_len = int(sampling_rate * max_s)
 
-        if (signal_len > max_len):
-            # Truncate the signal to the given length
-            signal = signal[:,:max_len]
+        # Truncate to given length
+        if signal_len > max_len:
+            signal = signal[:, :max_len]
 
-        elif (signal_len < max_len):
-            # Length of padding to add at the beginning and end of the signal
+        # Pad if it's shorter than max length
+        elif signal_len < max_len:
             pad_begin_len = random.randint(0, max_len - signal_len)
             pad_end_len = max_len - signal_len - pad_begin_len
 
@@ -86,7 +92,7 @@ class AudioUtil():
 
             signal = torch.cat((pad_begin, signal, pad_end), 1)
 
-        return (signal, sampling_rate)
+        return signal, sampling_rate
 
     # ----------------------------
     # Shifts the signal to the left or right by some percent. Values at the end
@@ -97,7 +103,12 @@ class AudioUtil():
         signal, signal_rate = aud
         _, sig_len = signal.shape
         shift_amt = int(random.random() * shift_limit * sig_len)
-        return (signal.roll(shift_amt), signal_rate)
+        return signal.roll(shift_amt), signal_rate
+
+    @staticmethod
+    def pitch_shift(aud, shift_limit):
+        #TODO
+        return
 
     # ----------------------------
     # Generate a Spectrogram
@@ -112,7 +123,7 @@ class AudioUtil():
 
         # Convert to decibels
         spectrogram = transforms.AmplitudeToDB(top_db=top_db)(spectrogram)
-        return (spectrogram)
+        return spectrogram
 
     # ----------------------------
     # Augment the Spectrogram by masking out some sections of it in both the frequency
