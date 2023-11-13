@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 1
-#SBATCH --time 01:00:00
+#SBATCH --time 08:00:00
 #SBATCH --partition brown                   
 # get tunneling info
 XDG_RUNTIME_DIR=""
