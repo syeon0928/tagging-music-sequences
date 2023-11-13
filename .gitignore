@@ -1,8 +1,27 @@
-# dont ignore label csv
-!label.csv
+# ignore raw csv from downloaded data only
+features_3_sec.csv
+features_30_sec.csv
+clip_info_final.csv
+annotations_final.csv
+comparisons_final.csv
 
 # Ignore sbatch logs
 *.out
+
+# Data files, add your specific data extensions if needed
+*.tsv
+*.xlsx
+*.xls
+*.data
+*.dump
+
+# Log and other files
+*.log
+*.tmp
+*.temp
+*.tmp.*
+*.swp
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -96,21 +115,6 @@ dmypy.json
 *.sql
 *.sqlite
 
-# Data files, add your specific data extensions if needed
-*.csv
-*.tsv
-*.xlsx
-*.xls
-*.data
-*.dump
-
-# Log and other files
-*.log
-*.tmp
-*.temp
-*.tmp.*
-*.swp
-*~
 
 # Virtual Studio Code
 .vscode/
