@@ -1,14 +1,10 @@
-# ignore raw csv from downloaded data only
-features_3_sec.csv
-features_30_sec.csv
-clip_info_final.csv
-annotations_final.csv
-comparisons_final.csv
+# original gtzan and mtat directories
+data/mtat
+data/gtzan
 
-# Ignore sbatch logs
-*.out
-
-# Data files, add your specific data extensions if needed
+# data files
+*.mp3
+*.wav
 *.tsv
 *.xlsx
 *.xls
@@ -17,6 +13,7 @@ comparisons_final.csv
 
 # Log and other files
 *.log
+*.out
 *.tmp
 *.temp
 *.tmp.*
@@ -136,14 +133,10 @@ Thumbs.db
 *.ckpt
 checkpoint
 # Usually keep large data files off of version control, but be explicit if they're in specific directories.
-data/
 *.bin
 *.tar.gz
 *.tgz
 *.zip
 *.gzip
 
-# Add any other file extensions depending on the datasets or large files you use
-*.mp3
-*.wav
 
