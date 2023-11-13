@@ -116,6 +116,9 @@ dmypy.json
 # Virtual Studio Code
 .vscode/
 
+# Idea project files
+.idea/
+
 # Private keys
 *.pem
 
