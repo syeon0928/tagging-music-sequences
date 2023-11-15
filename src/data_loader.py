@@ -31,19 +31,19 @@ class AudioDS(Dataset):
         label = torch.from_numpy(label)
 
         # Load audio as tuple: (waveform, sample_rate)
-        aud = AudioUtil.open(audio_file)
+        waveform, sample_rate = AudioUtil.open(audio_file)
 
         # Set sampling rate and audio length
-        aud = AudioUtil.resample(aud, self.sample_rate)
-        # aud = AudioUtil.rechannel(aud, self.channel)
-        aud = AudioUtil.fix_audio_length(aud, self.duration)
+        waveform, sample_rate = AudioUtil.resample(waveform, sample_rate, self.sample_rate)
+        # waveform, sample_rate = AudioUtil.rechannel(waveform, sample_rate, self.channel)
+        waveform, sample_rate = AudioUtil.fix_audio_length(waveform, sample_rate, self.duration)
 
         # Return Mel spectrogram and labels if specified, otherwise return waveform and labels
         if self.output == 'mel_spec':
-            mel_spec_db = AudioUtil.mel_spectrogram_with_db(aud, n_mels=64, n_fft=1024, hop_len=None)
+            mel_spec_db = AudioUtil.mel_spectrogram_with_db(waveform, sample_rate, n_mels=64, n_fft=1024, hop_len=None)
             return mel_spec_db, label
         else:
-            waveform, sample_rate = aud
+            waveform, sample_rate = waveform, sample_rate
             return waveform, label
 
     # decode labels based on class columns

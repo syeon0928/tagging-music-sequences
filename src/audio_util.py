@@ -1,8 +1,12 @@
 import math, random
+import os
+import pandas as pd
 import numpy as np
 import torch
 import torchaudio
 from torchaudio import transforms
+import librosa
+import librosa.display
 from torchaudio.transforms import TimeStretch, FrequencyMasking
 import matplotlib.pyplot as plt
 
@@ -16,15 +20,12 @@ class AudioUtil:
         return waveform, sample_rate
 
     @staticmethod
-    def get_audio_channels(aud):
-        waveform, sample_rate = aud
+    def get_audio_channels(waveform, sample_rate):
         num_channels = waveform.shape[0]  # The shape is (num_channels, num_samples)
         return num_channels
 
     @staticmethod
-    def get_audio_duration(aud):
-        waveform, sample_rate = aud
-
+    def get_audio_duration(waveform, sample_rate):
         num_samples = waveform.shape[1]
         duration_seconds = num_samples / sample_rate
         return duration_seconds
@@ -33,12 +34,11 @@ class AudioUtil:
     # Convert the given audio to the desired number of channels
     # ----------------------------
     @staticmethod
-    def rechannel(aud, new_channel):
-        waveform, sample_rate = aud
+    def rechannel(waveform, sample_rate, new_channel):
 
         if waveform.shape[0] == new_channel:
             # Nothing to do
-            return aud
+            return waveform, sample_rate
 
         if new_channel == 1:
             # Convert from stereo to mono by selecting only the first channel
@@ -53,12 +53,11 @@ class AudioUtil:
     # Since Resample applies to a single channel, we resample one channel at a time
     # ----------------------------
     @staticmethod
-    def resample(aud, new_sample_rate):
-        waveform, sample_rate = aud
+    def resample(waveform, sample_rate, new_sample_rate):
 
         if sample_rate == new_sample_rate:
             # Nothing to do
-            return aud
+            return waveform, sample_rate
 
         num_channels = waveform.shape[0]
         # Resample first channel
@@ -74,8 +73,7 @@ class AudioUtil:
     # Pad (or truncate) the waveform to a fixed length 'max_s' in seconds
     # ----------------------------
     @staticmethod
-    def fix_audio_length(aud, max_s):
-        waveform, sample_rate = aud
+    def fix_audio_length(waveform, sample_rate, max_s):
         num_rows, waveform_len = waveform.shape
         max_len = int(sample_rate * max_s)
 
@@ -100,8 +98,7 @@ class AudioUtil:
     # Generate a Spectrogram
     # ----------------------------
     @staticmethod
-    def mel_spectrogram_with_db(aud, n_mels=64, n_fft=1024, hop_len=None):
-        waveform, sample_rate = aud
+    def mel_spectrogram_with_db(waveform, sample_rate, n_mels=64, n_fft=1024, hop_len=None):
         top_db = 80
 
         # spec has shape [channel, n_mels, time], where channel is mono, stereo etc
@@ -116,89 +113,113 @@ class AudioPlot:
     # Plot waveform
     @staticmethod
     def plot_waveform(waveform, sample_rate, title="Waveform", xlim=None):
-        waveform = waveform.numpy()
+        if isinstance(waveform, torch.Tensor):
+            waveform = waveform.numpy()
 
-        num_channels, num_frames = waveform.shape
-        time_axis = torch.arange(0, num_frames) / sample_rate
+        plt.figure(figsize=(14, 5))
 
-        plt.figure(figsize=(12, 6))
-        plt.plot(time_axis, waveform.T)  # waveform is transposed to shape [time x channels]
-        plt.grid(True)
-        plt.title('Waveform')
-        plt.ylabel('Amplitude')
-        plt.xlabel('Time (seconds)')
-        plt.show()
+        librosa.display.waveshow(waveform, sr=sample_rate)
+        plt.title(title)
 
     @staticmethod
-    def plot_spectrogram(spec, sample_rate, title="Spectrogram", ylabel='Frequency (Hz)', xlabel='Time (seconds)', cmap='viridis'):
-        # Convert complex tensor to magnitude spectrogram
-        spec_mag = torch.abs(spec)
+    def plot_spectrogram(spec, sample_rate, title="Spectrogram"):
+        if isinstance(spec, torch.Tensor):
+            # Convert PyTorch tensor to NumPy array
+            spec = spec.cpu().detach().numpy()
 
-        # Take the magnitude of the complex tensor, and transpose it for display purposes
-        spec_mag = spec_mag.squeeze().t()
+            # Handle dimensions: spec should be 2D for plotting
+        if spec.ndim > 2:
+            # Average across the first dimension if it represents channels
+            spec = np.mean(spec, axis=0)
 
         plt.figure(figsize=(12, 6))
-        plt.imshow(spec_mag.numpy(), origin='lower', aspect='auto', cmap=cmap)
-        plt.colorbar(label='Magnitude')
+        librosa.display.specshow(spec, sr=sample_rate, x_axis='time', y_axis='mel')
         plt.title(title)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.tight_layout()
-        plt.show()
-
-    @staticmethod
-    def plot_mel_spectrogram(mel_spec_db, sample_rate, n_mels=64, n_fft=1024, hop_len=512, title="Mel Spectrogram"):
-        # Squeeze the tensor to remove the channel dimension if necessary
-        if mel_spec_db.ndim == 3 and mel_spec_db.shape[0] == 1:
-            mel_spec_db = mel_spec_db.squeeze(0)
-
-        # Calculate the time axis in seconds
-        time_axis = np.linspace(0, mel_spec_db.shape[-1] * hop_len / sample_rate, num=mel_spec_db.shape[-1])
-
-        # Plot the spectrogram
-        plt.figure(figsize=(12, 6))
-        plt.imshow(mel_spec_db, cmap='viridis', aspect='auto', origin='lower', extent=[0, max(time_axis), 0, n_mels])
-        plt.title(title)
-        plt.xlabel('Time (seconds)')
-        plt.ylabel('Mel Frequency Bins')
-        plt.colorbar(format='%+2.0f dB')
-        plt.tight_layout()
-        plt.show()
+        plt.colorbar(format="%+2.f dB")
 
 
 class AudioAugment:
 
     @staticmethod
-    def time_shift(aud, shift_limit):
-        signal, signal_rate = aud
-        _, sig_len = signal.shape
-        shift_amt = int(random.uniform(-shift_limit, shift_limit) * sig_len)
-        return signal.roll(shift_amt), signal_rate
-
-    def pitch_shift(aud, n_steps):
-        signal, sample_rate = aud
-        signal = signal.numpy()  # Convert to numpy array for librosa compatibility
-        shifted_signal = torchaudio.transforms.PitchShift(sample_rate, n_steps)(signal)
-        return torch.from_numpy(shifted_signal), sample_rate  # Convert back to torch tensor
+    def pitch_shift(waveform, sample_rate, n_steps=4):
+        waveform = waveform.numpy()
+        waveform_pitch_shifted = librosa.effects.pitch_shift(waveform, sr=sample_rate, n_steps=n_steps)
+        waveform_pitch_shifted = torch.from_numpy(waveform_pitch_shifted)
+        return waveform_pitch_shifted, sample_rate
 
     @staticmethod
-    def add_white_noise(aud, noise_level=0.005):
-        signal, sample_rate = aud
-        noise = torch.randn(signal.shape) * noise_level
-        noisy_signal = signal + noise
+    def time_stretch(waveform, sample_rate, stretch_factor=1.0):
+        waveform = waveform.numpy()
+        waveform_stretched = librosa.effects.time_stretch(waveform, rate=stretch_factor)
+        waveform_stretched = torch.from_numpy(waveform_stretched)
+        return waveform_stretched, sample_rate
+
+    @staticmethod
+    def time_shift(waveform, sample_rate, shift_limit):
+        _, sig_len = waveform.shape
+        shift_amt = int(random.uniform(-shift_limit, shift_limit) * sig_len)
+        return waveform.roll(shift_amt), sample_rate
+
+    @staticmethod
+    def add_white_noise(waveform, sample_rate, noise_level=0.005):
+        noise = torch.randn(waveform.shape) * noise_level
+        noisy_signal = waveform + noise
         return noisy_signal.clamp_(-1, 1), sample_rate  # Ensure the signal stays in the -1 to 1 range
 
     @staticmethod
-    def time_stretch(aud, stretch_factor=1.0):
-        signal, sample_rate = aud
-        # Placeholder: actual time stretching code would go here
-        # Since PyTorch doesn't natively support time stretching, we'll return the signal unchanged
-        # but with adjusted sample rate to simulate the effect
-        new_sample_rate = int(sample_rate / stretch_factor)
-        return signal, new_sample_rate  # Return unchanged signal with modified sample rate
+    def random_gain(waveform, sample_rate, gain_range=(0.5, 1.5)):
+        gain = random.uniform(*gain_range)
+        return waveform * gain, sample_rate
 
     @staticmethod
-    def random_gain(aud, gain_range=(0.5, 1.5)):
-        signal, sample_rate = aud
-        gain = random.uniform(*gain_range)
-        return signal * gain, sample_rate
+    def apply_augmentation(waveform, sample_rate, augmentation, params):
+        if augmentation == 'pitch_shift':
+            return AudioAugment.pitch_shift(waveform, sample_rate, **params)
+        elif augmentation == 'time_stretch':
+            return AudioAugment.time_stretch(waveform, sample_rate, **params)
+        # ... other augmentations ...
+        else:
+            return waveform, sample_rate
+
+    @staticmethod
+    def random_augment(waveform, sample_rate, augmentations):
+        chosen_augmentation = random.choice(augmentations)
+        augmentation_name = chosen_augmentation['name']
+        params = chosen_augmentation.get('params', {})
+        return AudioAugment.apply_augmentation(waveform, sample_rate, augmentation_name, params)
+    @staticmethod
+    def augment_and_store_audio(df, n, output_dir, augmentations, dry_run=False):
+        new_rows = []
+
+        for index, row in df.iterrows():
+            filepath = row['filepath']
+            full_path = os.path.join('../data', filepath)  # Full path for reading
+
+            waveform, sample_rate = AudioUtil.open(full_path)
+
+            for i in range(n):
+                augmented_waveform, _ = AudioAugment.random_augment(waveform.clone(), sample_rate, augmentations)
+                base_filename = os.path.splitext(os.path.basename(filepath))[0]
+                augmented_filename = f'{base_filename}_aug_{i}.wav'
+
+                # Relative path for saving and appending to DataFrame
+                relative_save_path = os.path.join(output_dir, augmented_filename)
+
+                # Full path for saving the file
+                full_save_path = os.path.join('../data', relative_save_path)
+
+                if not dry_run:
+                    # Save as .wav
+                    os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
+                    torchaudio.save(full_save_path, augmented_waveform, sample_rate)
+
+                # Prepare new row data
+                new_row = row.copy()
+                new_row['filepath'] = relative_save_path  # Store the relative path
+                new_rows.append(new_row)
+
+        # Concatenate the new rows to the original DataFrame
+        new_rows_df = pd.DataFrame(new_rows)
+        df = pd.concat([df, new_rows_df], ignore_index=True)
+
+        return df
