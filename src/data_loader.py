@@ -1,6 +1,5 @@
-from torch.utils.data import Dataset, DataLoader
-from src.audio_util import *
-import torchaudio
+from torch.utils.data import Dataset
+from .audio_util import *
 
 
 # TODO GPU Support
