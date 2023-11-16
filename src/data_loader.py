@@ -3,50 +3,59 @@ from src.audio_util import *
 import torchaudio
 
 
+# TODO GPU Support
 class AudioDS(Dataset):
-    def __init__(self, df, data_path, output='waveform'):
-        self.df = df
-        self.data_path = str(data_path)
-        self.output = output
-        self.class_columns = df.drop(columns=['filepath']).columns.to_list()
+    def __init__(self,
+                 annotations_file,
+                 data_dir,
+                 target_sample_rate=16000,
+                 target_length=30,
+                 transformation=None,
+                 ):
 
-        # Convert each column in class_columns to boolean
+        self.annotations_file = annotations_file
+        self.data_dir = data_dir
+        self.sample_rate = target_sample_rate
+        self.target_length = target_length
+        self.transformation = transformation
+
+        # Convert each column in class_columns to bool
+        self.class_columns = annotations_file.drop(columns=['filepath']).columns.to_list()
         for col in self.class_columns:
-            df[col] = df[col].astype('bool')
-
-        # Define standardization instance variables
-        self.duration = 30
-        self.sample_rate = 16000
-        self.channel = 1
+            annotations_file[col] = annotations_file[col].astype('bool')
 
     def __len__(self):
-        return len(self.df)
+        return len(self.annotations_file)
 
     def __getitem__(self, idx):
         # Concatenated file path - Example: '../data/' + 'mtat/.......mp3'
-        audio_file = self.data_path + self.df.loc[idx, 'filepath']
+        audio_file = self.data_dir + self.annotations_file.loc[idx, 'filepath']
 
         # Retrieve labels
-        label = self.df.loc[idx, self.class_columns].astype(bool).to_numpy()
+        label = self.annotations_file.loc[idx, self.class_columns].astype(bool).to_numpy()
         label = torch.from_numpy(label)
 
         # Load audio as tuple: (waveform, sample_rate)
-        waveform, sample_rate = AudioUtil.open(audio_file)
+        audio = AudioUtil.open(audio_file)
 
         # Set sampling rate and audio length
-        waveform, sample_rate = AudioUtil.resample(waveform, sample_rate, self.sample_rate)
-        # waveform, sample_rate = AudioUtil.rechannel(waveform, sample_rate, self.channel)
-        waveform, sample_rate = AudioUtil.fix_audio_length(waveform, sample_rate, self.duration)
+        audio = AudioUtil.resample(audio, self.sample_rate)
+        audio = AudioUtil.pad_or_trunc(audio, self.target_length)
 
-        # Return Mel spectrogram and labels if specified, otherwise return waveform and labels
-        if self.output == 'mel_spec':
-            mel_spec_db = AudioUtil.mel_spectrogram_with_db(waveform, sample_rate, n_mels=64, n_fft=1024, hop_len=None)
-            return mel_spec_db, label
+        # Apply transformation if it's provided
+        if self.transformation:
+            signal, _ = audio
+            transformed_signal = self.transformation(signal)
+            return transformed_signal, label
         else:
-            waveform, sample_rate = waveform, sample_rate
-            return waveform, label
+            signal, _ = audio
+            return signal, label
 
-    # decode labels based on class columns
+    # Get file path at a given index
+    def get_filepath(self, idx):
+        # Retrieve the file path for a given index
+        return self.data_dir + self.annotations_file.loc[idx, 'filepath']
+
     def decode_labels(self, encoded_labels):
         # Decodes the one-hot encoded labels back to their class names
         decoded_labels = []
@@ -55,10 +64,6 @@ class AudioDS(Dataset):
                 decoded_labels.append(self.class_columns[i])
         return decoded_labels
 
-    # Get file path at a given index
-    def get_filepath(self, idx):
-        # Retrieve the file path for a given index
-        return self.data_path + self.df.loc[idx, 'filepath']
 
 
 
