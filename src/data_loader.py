@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-from .audio_util import *
+from src.audio_util import *
 
 
 # TODO GPU Support
@@ -21,7 +21,7 @@ class AudioDS(Dataset):
         # Convert each column in class_columns to bool
         self.class_columns = annotations_file.drop(columns=['filepath']).columns.to_list()
         for col in self.class_columns:
-            annotations_file[col] = annotations_file[col].astype('bool')
+            annotations_file[col] = annotations_file[col].astype('float')
 
     def __len__(self):
         return len(self.annotations_file)
@@ -31,7 +31,7 @@ class AudioDS(Dataset):
         audio_file = self.data_dir + self.annotations_file.loc[idx, 'filepath']
 
         # Retrieve labels
-        label = self.annotations_file.loc[idx, self.class_columns].astype(bool).to_numpy()
+        label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
         label = torch.from_numpy(label)
 
         # Load audio as tuple: (waveform, sample_rate)
