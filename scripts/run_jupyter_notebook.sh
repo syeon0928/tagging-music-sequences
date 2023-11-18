@@ -2,6 +2,7 @@
 #SBATCH --job-name jupyter-notebook
 #SBATCH --output jupyter-notebook-%J.log
 #SBATCH --gres=gpu
+#SBATCH --cpus-per-task=32        # Schedule 32 cores (idk what im doing)
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 1
 #SBATCH --time 08:00:00
