@@ -1,3 +1,6 @@
+from pathlib import Path
+import pandas as pd
+import os
 from torch.utils.data import Dataset
 from src.audio_util import *
 
@@ -18,17 +21,21 @@ class AudioDS(Dataset):
         self.target_length = target_length
         self.transformation = transformation
 
-        # Convert each column in class_columns to bool
-        self.class_columns = annotations_file.drop(columns=['filepath']).columns.to_list()
+        # Load annotations using pandas
+        self.annotations_file = pd.read_csv(os.path.join(data_dir, annotations_file), index_col=0).reset_index(
+            drop=True)
+
+        # Convert each column in class_columns to float
+        self.class_columns = self.annotations_file.drop(columns=['filepath']).columns.to_list()
         for col in self.class_columns:
-            annotations_file[col] = annotations_file[col].astype('float')
+            self.annotations_file[col] = self.annotations_file[col].astype('float')
 
     def __len__(self):
         return len(self.annotations_file)
 
     def __getitem__(self, idx):
         # Concatenated file path - Example: '../data/' + 'mtat/.......mp3'
-        audio_file = self.data_dir + self.annotations_file.loc[idx, 'filepath']
+        audio_file = self.data_dir / self.annotations_file.loc[idx, 'filepath']
 
         # Retrieve labels
         label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
@@ -53,7 +60,7 @@ class AudioDS(Dataset):
     # Get file path at a given index
     def get_filepath(self, idx):
         # Retrieve the file path for a given index
-        return self.data_dir + self.annotations_file.loc[idx, 'filepath']
+        return self.data_dir / self.annotations_file.loc[idx, 'filepath']
 
     def decode_labels(self, encoded_labels):
         # Decodes the one-hot encoded labels back to their class names
