@@ -77,7 +77,7 @@ class AudioUtil:
         return waveform, sample_rate
 
     @staticmethod
-    def get_audio_transforms(sample_rate=16000, n_fft=1024, hop_length=160, n_mels=64, top_db=80):
+    def get_audio_transforms(sample_rate=16000, n_fft=512, hop_length=256, n_mels=96, top_db=80):
         """
         Create a transformation pipeline for audio data.
 
