@@ -13,13 +13,14 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.history={'train_loss': [], 'train_accuracy': [], 'train_roc_auc': [], 'train_pr_auc': [], 'val_loss': [],
+                   'val_accuracy': [], 'val_roc_auc': [], 'val_pr_auc': []}
+
 
     def train(self, epochs):
         self.model.train()
         pbar = tqdm(total=epochs, desc='Training', leave=True)
-        history = {'train_loss': [], 'train_accuracy': [], 'train_roc_auc': [], 'train_pr_auc': [], 'val_loss': [],
-                   'val_accuracy': [], 'val_roc_auc': [], 'val_pr_auc': []}
-
+        
         # iterate over epochs
         for epoch in range(epochs):
             total_loss_train = 0
@@ -39,21 +40,28 @@ class Trainer:
 
                 total_loss_train += loss.item()
 
+                # Apply sigmoid to convert to probabilities
+                probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
+
+                predicted_labels_train.append(probabilities)
+                true_labels_train.append(labels.cpu().numpy())
+                
+
             # Calculate evaluation metrics from Training phase in current epoch
             avg_loss_train = total_loss_train / len(self.train_loader)
-            history['train_loss'].append(avg_loss_train)
+            self.history['train_loss'].append(avg_loss_train)
             train_accuracy, train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train,
                                                                                    true_labels_train)
-            history['train_accuracy'].append(train_accuracy)
-            history['train_roc_auc'].append(train_roc_auc)
-            history['train_pr_auc'].append(train_pr_auc)
+            self.history['train_accuracy'].append(train_accuracy)
+            self.history['train_roc_auc'].append(train_roc_auc)
+            self.history['train_pr_auc'].append(train_pr_auc)
 
             # Retrieve evaluation metrics from validation phase in current epoch
             val_loss, val_accuracy, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
-            history['val_loss'].append(val_loss)
-            history['val_accuracy'].append(val_accuracy)
-            history['val_roc_auc'].append(val_roc_auc)
-            history['val_pr_auc'].append(val_pr_auc)
+            self.history['val_loss'].append(val_loss)
+            self.history['val_accuracy'].append(val_accuracy)
+            self.history['val_roc_auc'].append(val_roc_auc)
+            self.history['val_pr_auc'].append(val_pr_auc)
 
             # Update progress bar after each epoch
             pbar.set_postfix({'epoch': epoch + 1, 'training loss': avg_loss_train, 'validation loss': val_loss})
@@ -61,7 +69,7 @@ class Trainer:
 
         pbar.close()
 
-        return history
+        return None
 
     def evaluate(self, dataloader):
         self.model.eval()
