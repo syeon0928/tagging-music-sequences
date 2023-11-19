@@ -1,8 +1,8 @@
-from pathlib import Path
-import pandas as pd
 import os
+import pandas as pd
+import torch
 from torch.utils.data import Dataset
-from src.audio_util import *
+from src import audio_util
 
 
 # TODO GPU Support
@@ -42,11 +42,11 @@ class AudioDS(Dataset):
         label = torch.from_numpy(label)
 
         # Load audio as tuple: (waveform, sample_rate)
-        audio = AudioUtil.open(audio_file)
+        audio = audio_util.open(audio_file)
 
         # Set sampling rate and audio length
-        audio = AudioUtil.resample(audio, self.sample_rate)
-        audio = AudioUtil.pad_or_trunc(audio, self.target_length)
+        audio = audio_util.resample(audio, self.sample_rate)
+        audio = audio_util.pad_or_trunc(audio, self.target_length)
 
         # Apply transformation if it's provided
         if self.transformation:
