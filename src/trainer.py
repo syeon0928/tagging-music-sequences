@@ -1,3 +1,4 @@
+import time
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -13,17 +14,16 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.history = {'train_loss': [],
-                        'train_accuracy': [],
                         'train_roc_auc': [],
                         'train_pr_auc': [],
                         'val_loss': [],
-                        'val_accuracy': [],
                         'val_roc_auc': [],
                         'val_pr_auc': []
                         }
 
     def train(self, epochs):
         self.model.train()
+        start_time = time.time()
 
         # iterate over epochs
         with tqdm(total=epochs, desc='Training', leave=True) as pbar:
@@ -54,16 +54,13 @@ class Trainer:
                 # Calculate evaluation metrics from Training phase in current epoch
                 avg_loss_train = total_loss_train / len(self.train_loader)
                 self.history['train_loss'].append(avg_loss_train)
-                train_accuracy, train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train,
-                                                                                       true_labels_train)
-                self.history['train_accuracy'].append(train_accuracy)
+                train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
                 self.history['train_roc_auc'].append(train_roc_auc)
                 self.history['train_pr_auc'].append(train_pr_auc)
 
                 # Retrieve evaluation metrics from validation phase in current epoch
-                val_loss, val_accuracy, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
+                val_loss, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
                 self.history['val_loss'].append(val_loss)
-                self.history['val_accuracy'].append(val_accuracy)
                 self.history['val_roc_auc'].append(val_roc_auc)
                 self.history['val_pr_auc'].append(val_pr_auc)
 
@@ -71,7 +68,16 @@ class Trainer:
                 pbar.update(1)
                 pbar.set_postfix({'epoch': epoch + 1, 'training loss': avg_loss_train, 'validation loss': val_loss})
 
-            pbar.close()
+                # Print performance metrics
+                elapsed_time = time.time() - start_time
+                print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time:.2f} seconds")
+                print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
+                print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
+                print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
+
+        # Calculate and print total training elapsed time
+        total_elapsed_time = time.time() - start_time
+        print(f"Total training time: {total_elapsed_time:.2f} seconds")
 
         return None
 
@@ -98,9 +104,9 @@ class Trainer:
 
         # calculate performance metrics
         avg_loss = total_loss / len(dataloader)
-        accuracy, roc_auc, pr_auc = self.performance_metrics(predicted_labels, true_labels)
+        roc_auc, pr_auc = self.performance_metrics(predicted_labels, true_labels)
 
-        return avg_loss, accuracy, roc_auc, pr_auc
+        return avg_loss, roc_auc, pr_auc
 
     # Implement function to retrieve metrics from predicted and true labels
     def performance_metrics(self, predicted_labels, true_labels):
@@ -112,15 +118,12 @@ class Trainer:
         threshold = 0.5
         predicted = (predicted_labels > threshold).astype(int)
 
-        # Multi-label accuracy
-        accuracy = np.mean(np.all(predicted == true_labels, axis=1))
-
         # Calculate performance metrics
         # use averaging across labels for ROC AUC, PR AUC
         roc_auc = roc_auc_score(true_labels, predicted_labels, average='macro', multi_class='ovo')
         pr_auc = average_precision_score(true_labels, predicted_labels, average='macro')
 
-        return accuracy, roc_auc, pr_auc
+        return roc_auc, pr_auc
 
     def save_model(self, path):
         # Create a dictionary to save both the model state dictionary and the class attributes
