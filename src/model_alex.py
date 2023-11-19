@@ -59,8 +59,7 @@ class FullyConvNet5(nn.Module):
         self.pool4 = nn.MaxPool2d((3, 5))
         self.pool5 = nn.MaxPool2d((4, 4))
 
-        # Final convolutional layer to adjust the output to 50 dimensions
-        # Note: Kernel size should be adjusted based on the output size of the last pooling layer
+        # Final convolutional layer to adjust the output to num_classes dimensions
         self.final_conv = nn.Conv2d(2048, num_classes, kernel_size=(1, 1))
 
     def forward(self, x):
