@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc, average_precision_score
@@ -13,61 +12,66 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
-        self.history={'train_loss': [], 'train_accuracy': [], 'train_roc_auc': [], 'train_pr_auc': [], 'val_loss': [],
-                   'val_accuracy': [], 'val_roc_auc': [], 'val_pr_auc': []}
-
+        self.history = {'train_loss': [],
+                        'train_accuracy': [],
+                        'train_roc_auc': [],
+                        'train_pr_auc': [],
+                        'val_loss': [],
+                        'val_accuracy': [],
+                        'val_roc_auc': [],
+                        'val_pr_auc': []
+                        }
 
     def train(self, epochs):
         self.model.train()
-        pbar = tqdm(total=epochs, desc='Training', leave=True)
-        
+
         # iterate over epochs
-        for epoch in range(epochs):
-            total_loss_train = 0
-            predicted_labels_train = []
-            true_labels_train = []
+        with tqdm(total=epochs, desc='Training', leave=True) as pbar:
+            for epoch in range(epochs):
+                total_loss_train = 0
+                predicted_labels_train = []
+                true_labels_train = []
 
-            # iterate over batches
-            for batch, labels in self.train_loader:
-                batch, labels = batch.to(self.device), labels.to(self.device)
+                # iterate over batches
+                for batch, labels in self.train_loader:
+                    batch, labels = batch.to(self.device), labels.to(self.device)
 
-                # traom
-                self.optimizer.zero_grad()
-                outputs = self.model(batch)
-                loss = self.criterion(outputs, labels)
-                loss.backward()
-                self.optimizer.step()
+                    # train
+                    self.optimizer.zero_grad()
+                    outputs = self.model(batch)
+                    loss = self.criterion(outputs, labels)
+                    loss.backward()
+                    self.optimizer.step()
 
-                total_loss_train += loss.item()
+                    total_loss_train += loss.item()
 
-                # Apply sigmoid to convert to probabilities
-                probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
+                    # Apply sigmoid to convert to probabilities
+                    probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
 
-                predicted_labels_train.append(probabilities)
-                true_labels_train.append(labels.cpu().numpy())
-                
+                    predicted_labels_train.append(probabilities)
+                    true_labels_train.append(labels.cpu().numpy())
 
-            # Calculate evaluation metrics from Training phase in current epoch
-            avg_loss_train = total_loss_train / len(self.train_loader)
-            self.history['train_loss'].append(avg_loss_train)
-            train_accuracy, train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train,
-                                                                                   true_labels_train)
-            self.history['train_accuracy'].append(train_accuracy)
-            self.history['train_roc_auc'].append(train_roc_auc)
-            self.history['train_pr_auc'].append(train_pr_auc)
+                # Calculate evaluation metrics from Training phase in current epoch
+                avg_loss_train = total_loss_train / len(self.train_loader)
+                self.history['train_loss'].append(avg_loss_train)
+                train_accuracy, train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train,
+                                                                                       true_labels_train)
+                self.history['train_accuracy'].append(train_accuracy)
+                self.history['train_roc_auc'].append(train_roc_auc)
+                self.history['train_pr_auc'].append(train_pr_auc)
 
-            # Retrieve evaluation metrics from validation phase in current epoch
-            val_loss, val_accuracy, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
-            self.history['val_loss'].append(val_loss)
-            self.history['val_accuracy'].append(val_accuracy)
-            self.history['val_roc_auc'].append(val_roc_auc)
-            self.history['val_pr_auc'].append(val_pr_auc)
+                # Retrieve evaluation metrics from validation phase in current epoch
+                val_loss, val_accuracy, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
+                self.history['val_loss'].append(val_loss)
+                self.history['val_accuracy'].append(val_accuracy)
+                self.history['val_roc_auc'].append(val_roc_auc)
+                self.history['val_pr_auc'].append(val_pr_auc)
 
-            # Update progress bar after each epoch
-            pbar.set_postfix({'epoch': epoch + 1, 'training loss': avg_loss_train, 'validation loss': val_loss})
-            pbar.update(1)
+                # Update progress bar after each epoch
+                pbar.update(1)
+                pbar.set_postfix({'epoch': epoch + 1, 'training loss': avg_loss_train, 'validation loss': val_loss})
 
-        pbar.close()
+            pbar.close()
 
         return None
 
@@ -119,7 +123,15 @@ class Trainer:
         return accuracy, roc_auc, pr_auc
 
     def save_model(self, path):
-        torch.save(self.model.state_dict(), path)
+        # Create a dictionary to save both the model state dictionary and the class attributes
+        checkpoint = {
+            'model_state_dict': self.model.state_dict(),
+            'history': self.history
+        }
+        torch.save(checkpoint, path)
 
     def load_model(self, path):
-        self.model.load_state_dict(torch.load(path, map_location=self.device))
+        # Load the checkpoint
+        checkpoint = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.history = checkpoint['history']
