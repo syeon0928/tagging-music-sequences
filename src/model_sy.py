@@ -2,6 +2,7 @@
 import os
 import sys
 from pathlib import Path
+
 cwd = os.getcwd()
 project_dir = os.path.abspath(os.path.join(cwd, os.pardir))
 sys.path.append(project_dir)
@@ -47,8 +48,7 @@ class WaveCNN9(nn.Module):
         self.global_max_pool = nn.AdaptiveMaxPool1d(1)
 
         # Fully connected layers
-        # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc1 = nn.Linear(512, 256)
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
@@ -84,7 +84,7 @@ class WaveCNN7(nn.Module):
         out_channels = 128
         for i in range(6):
 
-            if i == 2:  # 4th layer
+            if i == 2:  # 3rd layer
                 out_channels = 256
             if i == 5:  # Last layer
                 out_channels = 512
@@ -95,12 +95,12 @@ class WaveCNN7(nn.Module):
             self.conv_blocks.append(nn.MaxPool1d(kernel_size=3, stride=3))
             in_channels = out_channels
 
-            # Global max pooling
+        # Global max pooling
         self.global_max_pool = nn.AdaptiveMaxPool1d(1)
 
         # Fully connected layers
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(out_channels, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
@@ -120,6 +120,7 @@ class WaveCNN7(nn.Module):
         x = self.fc2(x)
 
         return x
+
 
 class WaveCNN5(nn.Module):
     def __init__(self, num_classes=50):
@@ -135,9 +136,9 @@ class WaveCNN5(nn.Module):
         out_channels = 128
         for i in range(4):
 
-            if i == 1:  # 3rd layer
+            if i == 1:  # 2nd layer
                 out_channels = 256
-            if i == 3:  # Last layer 5th
+            if i == 3:  # Last layer
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -146,12 +147,12 @@ class WaveCNN5(nn.Module):
             self.conv_blocks.append(nn.MaxPool1d(kernel_size=3, stride=3))
             in_channels = out_channels
 
-            # Global max pooling
+        # Global max pooling
         self.global_max_pool = nn.AdaptiveMaxPool1d(1)
 
         # Fully connected layers
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(out_channels, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
@@ -173,10 +174,7 @@ class WaveCNN5(nn.Module):
         return x
 
 
-
-
-if __name__=='__main__':
-
+if __name__ == '__main__':
     # setup cuda device
     device = (
         "cuda"
@@ -235,7 +233,7 @@ if __name__=='__main__':
     input_size = (train_features.size()[1:])
     model_summary = summary(wavecnn9.to(device), input_size) if device == 'cuda' else summary(wavecnn9, input_size)
     print(model_summary)
-    
+
     # Train
     # Instantiate trainer
     criterion = nn.BCEWithLogitsLoss()
@@ -277,4 +275,3 @@ if __name__=='__main__':
 
     traine_5.train(epochs=EPOCHS)
     traine_5.save_model('../models/waveform_cnn5.pth')
-
