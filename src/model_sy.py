@@ -215,41 +215,24 @@ if __name__ == '__main__':
 
     # CNN 7
     # check the summary
-    print('Start Training WaveCNN 9 Layers')
-    wavecnn7 = WaveCNN7(num_classes=50)
-    input_size = (train_features.size()[1:])
-    model_summary = summary(wavecnn7.to(device), input_size) if device == 'cuda' else summary(wavecnn7, input_size)
-    print(model_summary)
-
-    # Train
-    # Instantiate trainer
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(wavecnn7.parameters(), lr=LEARNING_RATE)
-    trainer = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
-    # train
-    trainer.train(epochs=EPOCHS)
-    trainer.save_model('../model/waveform_cnn9.pth')
-
-    # CNN 7
-    # check the summary
-    print('Start Training WaveCNN 9 Layers')
-    wavecnn7 = WaveCNN7(num_classes=50)
-    input_size = (train_features.size()[1:])
-    model_summary = summary(wavecnn7.to(device), input_size) if device == 'cuda' else summary(wavecnn7, input_size)
-    print(model_summary)
-
-    # Train
-    # Instantiate trainer
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(wavecnn7.parameters(), lr=LEARNING_RATE)
-    trainer = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
-    # train
-    trainer.train(epochs=EPOCHS)
-    trainer.save_model('../model/waveform_cnn7.pth')
+    # print('Start Training WaveCNN 7 Layers')
+    # wavecnn7 = WaveCNN7(num_classes=50)
+    # input_size = (train_features.size()[1:])
+    # model_summary = summary(wavecnn7.to(device), input_size) if device == 'cuda' else summary(wavecnn7, input_size)
+    # print(model_summary)
+    #
+    # # Train
+    # # Instantiate trainer
+    # criterion = nn.BCEWithLogitsLoss()
+    # optimizer = optim.Adam(wavecnn7.parameters(), lr=LEARNING_RATE)
+    # trainer7 = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
+    # # train
+    # trainer7.train(epochs=EPOCHS)
+    # trainer7.save_model('../model/waveform_cnn9.pth')
 
     # CNN 5
     # check the summary
-    print('Start Training WaveCNN 9 Layers')
+    print('Start Training WaveCNN 5 Layers')
     wavecnn5 = WaveCNN5(num_classes=50)
     input_size = (train_features.size()[1:])
     model_summary = summary(wavecnn5.to(device), input_size) if device == 'cuda' else summary(wavecnn5, input_size)
@@ -259,8 +242,8 @@ if __name__ == '__main__':
     # Instantiate trainer
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(wavecnn5.parameters(), lr=LEARNING_RATE)
-    trainer = Trainer(wavecnn5, train_dataloader, val_dataloader, criterion, optimizer, device)
+    trainer5 = Trainer(wavecnn5, train_dataloader, val_dataloader, criterion, optimizer, device)
     # train
-    trainer.train(epochs=EPOCHS)
-    trainer.save_model('../model/waveform_cnn5.pth')
+    trainer5.train(epochs=EPOCHS)
+    trainer5.save_model('../model/waveform_cnn5.pth')
 
