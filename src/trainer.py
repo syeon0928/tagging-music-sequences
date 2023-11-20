@@ -1,5 +1,6 @@
 import time
 import torch
+import os
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc, average_precision_score
@@ -126,12 +127,18 @@ class Trainer:
         return roc_auc, pr_auc
 
     def save_model(self, path):
+        base_path, filename = os.path.split(path)
+        timestamp = time.strftime("%Y%m%d-%H%M")
+        name, ext = os.path.splitext(filename)
+        new_filename = f"{name}_{timestamp}{ext}"
+        new_path = os.path.join(base_path, new_filename)
+
         # Create a dictionary to save both the model state dictionary and the class attributes
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'history': self.history
         }
-        torch.save(checkpoint, path)
+        torch.save(checkpoint, new_path)
 
     def load_model(self, path):
         # Load the checkpoint
