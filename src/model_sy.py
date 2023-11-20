@@ -18,7 +18,7 @@ import torch.nn.functional as F
 import numpy as np
 
 
-class WaveCNN7(nn.Module):
+class WaveCNN9(nn.Module):
     def __init__(self, num_classes=50):
         super(WaveCNN9, self).__init__()
 
@@ -31,9 +31,62 @@ class WaveCNN7(nn.Module):
         self.conv_blocks = nn.ModuleList()
         in_channels = 128
         out_channels = 128
+        for i in range(8):
+
+            if i == 3:  # 4th layer
+                out_channels = 256
+            if i == 8:  # Last layer
+                out_channels = 512
+
+            self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
+            self.conv_blocks.append(nn.BatchNorm1d(out_channels))
+            self.conv_blocks.append(nn.ReLU())
+            self.conv_blocks.append(nn.MaxPool1d(kernel_size=3, stride=3))
+            in_channels = out_channels
+
+            # Global max pooling
+        self.global_max_pool = nn.AdaptiveMaxPool1d(1)
+
+        # Fully connected layers
+        # Adjust the input size of the first FC layer based on the output of the last convolutional block
+        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc2 = nn.Linear(256, num_classes)
+
+    def forward(self, x):
+        # Initial strided convolution
+        x = self.relu0(self.bn0(self.strided_conv(x)))
+
+        # Convolutional blocks
+        for block in self.conv_blocks:
+            x = block(x)
+
+        # Global max pooling
+        x = self.global_max_pool(x)
+        x = x.view(x.size(0), -1)  # Flatten
+
+        # Fully connected layers
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+
+
+class WaveCNN7(nn.Module):
+    def __init__(self, num_classes=50):
+        super(WaveCNN7, self).__init__()
+
+        # Strided convolution to reduce dimensionality
+        self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
+        self.bn0 = nn.BatchNorm1d(128)
+        self.relu0 = nn.ReLU()
+
+        # Convolutional blocks
+        self.conv_blocks = nn.ModuleList()
+        in_channels = 128
+        out_channels = 128
         for i in range(6):
 
-            if i == 3:  # 3th layer
+            if i == 3:  # 4th layer
                 out_channels = 256
             if i == 6:  # Last layer
                 out_channels = 512
@@ -54,7 +107,7 @@ class WaveCNN7(nn.Module):
 
     def forward(self, x):
         # Initial strided convolution
-        x = self.relu(self.bn0(self.strided_conv(x)))
+        x = self.relu0(self.bn0(self.strided_conv(x)))
 
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -70,10 +123,9 @@ class WaveCNN7(nn.Module):
 
         return x
 
-
 class WaveCNN5(nn.Module):
     def __init__(self, num_classes=50):
-        super(WaveformNet, self).__init__()
+        super(WaveCNN5, self).__init__()
 
         # Strided convolution to reduce dimensionality
         self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
@@ -86,7 +138,7 @@ class WaveCNN5(nn.Module):
         out_channels = 128
         for i in range(4):
 
-            if i == 2:  # 4th layer
+            if i == 2:  # 3th layer
                 out_channels = 256
             if i == 4:  # Last layer
                 out_channels = 512
@@ -107,58 +159,7 @@ class WaveCNN5(nn.Module):
 
     def forward(self, x):
         # Initial strided convolution
-        x = self.relu(self.bn0(self.strided_conv(x)))
-
-        # Convolutional blocks
-        for block in self.conv_blocks:
-            x = block(x)
-
-        # Global max pooling
-        x = self.global_max_pool(x)
-        x = x.view(x.size(0), -1)  # Flatten
-
-        # Fully connected layers
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-
-        return x
-
-class WaveCNN5(nn.Module):
-    def __init__(self, num_classes=50):
-        super(WaveformNet, self).__init__()
-
-        # Strided convolution to reduce dimensionality
-        self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
-        self.bn0 = nn.BatchNorm1d(128)
-
-        # Convolutional blocks
-        self.conv_blocks = nn.ModuleList()
-        in_channels = 128
-        out_channels = 128
-        for i in range(8):
-
-            if i == 3:  # 4th layer
-                out_channels = 256
-            if i == 7:  # Last layer
-                out_channels = 512
-
-            self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
-            self.conv_blocks.append(nn.BatchNorm1d(out_channels))
-            self.conv_blocks.append(nn.ReLU())
-            self.conv_blocks.append(nn.MaxPool1d(kernel_size=3, stride=3))
-            in_channels = out_channels
-
-            # Global max pooling
-        self.global_max_pool = nn.AdaptiveMaxPool1d(1)
-
-        # Fully connected layers
-        # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
-        self.fc2 = nn.Linear(256, num_classes)
-
-    def forward(self, x):
-        # Initial strided convolution
-        x = F.relu(self.bn0(self.strided_conv(x)))
+        x = self.relu0(self.bn0(self.strided_conv(x)))
 
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -266,3 +267,4 @@ if __name__=='__main__':
 
     traine_5.train(epochs=EPOCHS)
     traine_5.save_model('../models/waveform_cnn5.pth')
+
