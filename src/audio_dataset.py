@@ -35,7 +35,7 @@ class AudioDS(Dataset):
 
     def __getitem__(self, idx):
         # Concatenated file path - Example: '../data/' + 'mtat/.......mp3'
-        audio_file = self.data_dir / self.annotations_file.loc[idx, 'filepath']
+        audio_file = str(self.data_dir / self.annotations_file.loc[idx, 'filepath'])
 
         # Retrieve labels
         label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
@@ -60,7 +60,7 @@ class AudioDS(Dataset):
     # Get file path at a given index
     def get_filepath(self, idx):
         # Retrieve the file path for a given index
-        return self.data_dir / self.annotations_file.loc[idx, 'filepath']
+        return str(self.data_dir / self.annotations_file.loc[idx, 'filepath'])
 
     def decode_labels(self, encoded_labels):
         # Decodes the one-hot encoded labels back to their class names
