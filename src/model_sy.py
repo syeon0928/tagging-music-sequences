@@ -67,19 +67,15 @@ class WaveCNN7(nn.Module):
     def __init__(self, num_classes=50):
         super(WaveCNN7, self).__init__()
 
-        # Strided convolution to reduce dimensionality
-        self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
-        self.bn0 = nn.BatchNorm1d(128)
-
         # Convolutional blocks
         self.conv_blocks = nn.ModuleList()
-        in_channels = 128
+        in_channels = 1
         out_channels = 128
-        for i in range(6):
+        for i in range(7):
 
-            if i == 2:  # 3rd layer
+            if i == 3:  # 4rd layer
                 out_channels = 256
-            if i == 5:  # Last layer
+            if i == 6:  # Last layer
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -213,12 +209,12 @@ if __name__ == '__main__':
     train_features, train_labels = next(iter(train_dataloader))
 
     ### CNN 9
-    # # # check the summary
-    print('Start Training WaveCNN 9 Layers')
-    wavecnn9 = WaveCNN9(num_classes=50)
-    input_size = (train_features.size()[1:])
-    model_summary = summary(wavecnn9.to(device), input_size) if device == 'cuda' else summary(wavecnn9, input_size)
-    print(model_summary)
+    # # # # check the summary
+    # print('Start Training WaveCNN 9 Layers')
+    # wavecnn9 = WaveCNN9(num_classes=50)
+    # input_size = (train_features.size()[1:])
+    # model_summary = summary(wavecnn9.to(device), input_size) if device == 'cuda' else summary(wavecnn9, input_size)
+    # print(model_summary)
     #
     # # Train
     # # Instantiate trainer
@@ -234,16 +230,16 @@ if __name__ == '__main__':
     input_size = (train_features.size()[1:])
     model_summary = summary(wavecnn7.to(device), input_size) if device == 'cuda' else summary(wavecnn7, input_size)
     print(model_summary)
-    #
-    # # Train
-    # # Instantiate trainer
-    # criterion = nn.BCEWithLogitsLoss()
-    # optimizer = optim.Adam(wavecnn7.parameters(), lr=LEARNING_RATE)
-    # trainer_7 = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
-    #
-    # trainer_7.train(epochs=EPOCHS)
-    # trainer_7.save_model('../models/waveform_cnn7.pth')
-    # print()
+
+    # Train
+    # Instantiate trainer
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(wavecnn7.parameters(), lr=LEARNING_RATE)
+    trainer_7 = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
+
+    trainer_7.train(epochs=EPOCHS)
+    trainer_7.save_model('../models/waveform_cnn7.pth')
+    print()
 
     ### CNN 5
     # check the summary
@@ -253,11 +249,11 @@ if __name__ == '__main__':
     model_summary = summary(wavecnn5.to(device), input_size) if device == 'cuda' else summary(wavecnn5, input_size)
     print(model_summary)
 
-    # # Train
-    # # Instantiate trainer
-    # criterion = nn.BCEWithLogitsLoss()
-    # optimizer = optim.Adam(wavecnn5.parameters(), lr=LEARNING_RATE)
-    # traine_5 = Trainer(wavecnn5, train_dataloader, val_dataloader, criterion, optimizer, device)
-    #
-    # traine_5.train(epochs=EPOCHS)
-    # traine_5.save_model('../models/waveform_cnn5.pth')
+    # Train
+    # Instantiate trainer
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(wavecnn5.parameters(), lr=LEARNING_RATE)
+    traine_5 = Trainer(wavecnn5, train_dataloader, val_dataloader, criterion, optimizer, device)
+
+    traine_5.train(epochs=EPOCHS)
+    traine_5.save_model('../models/waveform_cnn5.pth')
