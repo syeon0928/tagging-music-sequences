@@ -7,6 +7,8 @@
 #SBATCH --ntasks-per-node 1
 #SBATCH --time 8:00:00
 #SBATCH --partition brown                   
+#SBATCH --mail-type=BEGIN,END,FAIL               # When to send email
+#SBATCH --mail-user=abys@itu.dk            # Email to which to send updates
 
 # load modules or conda environments here
 # update the $CONDAENV here to match the environment created earlier
