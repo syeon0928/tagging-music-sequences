@@ -25,7 +25,6 @@ class WaveCNN9(nn.Module):
         # Strided convolution to reduce dimensionality
         self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
         self.bn0 = nn.BatchNorm1d(128)
-        self.relu0 = nn.ReLU()
 
         # Convolutional blocks
         self.conv_blocks = nn.ModuleList()
@@ -33,9 +32,9 @@ class WaveCNN9(nn.Module):
         out_channels = 128
         for i in range(8):
 
-            if i == 3:  # 4th layer
+            if i == 3:  # 5th layer
                 out_channels = 256
-            if i == 8:  # Last layer
+            if i == 7:  # Last layer
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -54,7 +53,7 @@ class WaveCNN9(nn.Module):
 
     def forward(self, x):
         # Initial strided convolution
-        x = self.relu0(self.bn0(self.strided_conv(x)))
+        x = F.relu(self.bn0(self.strided_conv(x)))
 
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -78,7 +77,6 @@ class WaveCNN7(nn.Module):
         # Strided convolution to reduce dimensionality
         self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
         self.bn0 = nn.BatchNorm1d(128)
-        self.relu0 = nn.ReLU()
 
         # Convolutional blocks
         self.conv_blocks = nn.ModuleList()
@@ -86,9 +84,9 @@ class WaveCNN7(nn.Module):
         out_channels = 128
         for i in range(6):
 
-            if i == 3:  # 4th layer
+            if i == 2:  # 4th layer
                 out_channels = 256
-            if i == 6:  # Last layer
+            if i == 5:  # Last layer
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -102,12 +100,12 @@ class WaveCNN7(nn.Module):
 
         # Fully connected layers
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc1 = nn.Linear(out_channels, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
         # Initial strided convolution
-        x = self.relu0(self.bn0(self.strided_conv(x)))
+        x = F.relu(self.bn0(self.strided_conv(x)))
 
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -130,7 +128,6 @@ class WaveCNN5(nn.Module):
         # Strided convolution to reduce dimensionality
         self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
         self.bn0 = nn.BatchNorm1d(128)
-        self.relu0 = nn.ReLU()
 
         # Convolutional blocks
         self.conv_blocks = nn.ModuleList()
@@ -138,9 +135,9 @@ class WaveCNN5(nn.Module):
         out_channels = 128
         for i in range(4):
 
-            if i == 2:  # 3th layer
+            if i == 1:  # 3rd layer
                 out_channels = 256
-            if i == 4:  # Last layer
+            if i == 3:  # Last layer 5th
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -154,12 +151,12 @@ class WaveCNN5(nn.Module):
 
         # Fully connected layers
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
-        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
+        self.fc1 = nn.Linear(out_channels, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
         # Initial strided convolution
-        x = self.relu0(self.bn0(self.strided_conv(x)))
+        x = F.relu(self.bn0(self.strided_conv(x)))
 
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -197,6 +194,15 @@ if __name__=='__main__':
     LEARNING_RATE = 0.001
     EPOCHS = 10
 
+    # data path
+    cwd = Path.cwd()
+    DATA_DIR = cwd.parent / 'data'
+
+    # Load label annotation csv
+    train_annotations = 'mtat_train_label.csv'
+    val_annotations = 'mtat_val_label.csv'
+    test_annotations = 'mtat_test_label.csv'
+
     # Load data
     train_data = AudioDS(annotations_file=train_annotations,
                          data_dir=DATA_DIR,
@@ -220,27 +226,30 @@ if __name__=='__main__':
     val_dataloader = DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=False)
     test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=False)
 
+    train_features, train_labels = next(iter(train_dataloader))
+
     ### CNN 9
     # # check the summary
-    # wavecnn9 = WaveCNN9(num_classes=50)
-    # input_size = (train_features.size()[1:])
-    # print(summary(wavecnn9.to(device), input_size))
-    #
-    # # Train
-    # # Instantiate trainer
-    # criterion = nn.BCEWithLogitsLoss()
-    # optimizer = optim.Adam(wavecnn9.parameters(), lr=LEARNING_RATE)
-    # trainer = Trainer(wavecnn9, train_dataloader, val_dataloader, criterion, optimizer, device)
-    #
-    # trainer.train(epochs=EPOCHS)
-    # trainer.save_model('../models/waveform_cnn9.pth')
+    print('Start Training WaveCNN 7 Layers')
+    wavecnn9 = WaveCNN9(num_classes=50)
+    input_size = (train_features.size()[1:])
+    model_summary = summary(wavecnn9.to(device), input_size) if device == 'cuda' else summary(wavecnn9, input_size)
+    print(model_summary)
+    
+    # Train
+    # Instantiate trainer
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(wavecnn9.parameters(), lr=LEARNING_RATE)
+    trainer = Trainer(wavecnn9, train_dataloader, val_dataloader, criterion, optimizer, device)
+    trainer.train(epochs=EPOCHS)
 
     ### CNN 7
     # check the summary
     print('Start Training WaveCNN 7 Layers')
     wavecnn7 = WaveCNN7(num_classes=50)
     input_size = (train_features.size()[1:])
-    print(summary(wavecnn7.to(device), input_size))
+    model_summary = summary(wavecnn7.to(device), input_size) if device == 'cuda' else summary(wavecnn7, input_size)
+    print(model_summary)
 
     # Train
     # Instantiate trainer
@@ -257,7 +266,8 @@ if __name__=='__main__':
     print('Start Training WaveCNN 5 Layers')
     wavecnn5 = WaveCNN5(num_classes=50)
     input_size = (train_features.size()[1:])
-    print(summary(wavecnn5.to(device), input_size))
+    model_summary = summary(wavecnn5.to(device), input_size) if device == 'cuda' else summary(wavecnn5, input_size)
+    print(model_summary)
 
     # Train
     # Instantiate trainer
