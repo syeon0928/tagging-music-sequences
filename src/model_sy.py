@@ -22,16 +22,19 @@ import numpy as np
 class WaveCNN9(nn.Module):
     def __init__(self, num_classes=50):
         super(WaveCNN9, self).__init__()
+        # Strided convolution to reduce dimensionality
+        self.strided_conv = nn.Conv1d(1, 128, kernel_size=3, stride=3)
+        self.bn0 = nn.BatchNorm1d(128)
 
         # Convolutional blocks
         self.conv_blocks = nn.ModuleList()
-        in_channels = 1
+        in_channels = 128
         out_channels = 128
-        for i in range(9):
+        for i in range(8):
 
-            if i == 4:  # 5th layer
+            if i == 3:  # 4th layer
                 out_channels = 256
-            if i == 8:  # Last layer
+            if i == 7:  # Last layer
                 out_channels = 512
 
             self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
@@ -44,10 +47,14 @@ class WaveCNN9(nn.Module):
         self.global_max_pool = nn.AdaptiveMaxPool1d(1)
 
         # Fully connected layers
-        self.fc1 = nn.Linear(512, 256)
+        # Adjust the input size of the first FC layer based on the output of the last convolutional block
+        self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
+        # Initial strided convolution
+        x = F.relu(self.bn0(self.strided_conv(x)))
+
         # Convolutional blocks
         for block in self.conv_blocks:
             x = block(x)
