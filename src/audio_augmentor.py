@@ -75,6 +75,9 @@ def main():
     data_path = '../data/mtat_train_label.csv'
     output_dir = '../data/mtat/augmented'
 
+    # Set a seed for reproducibility
+    random.seed(1)
+
     # Define augmentations
     augmentations = [
         {'name': 'pitch_shift', 'params': {'n_steps': random.randint(-4, 4)}},
