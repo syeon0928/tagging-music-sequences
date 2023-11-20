@@ -93,9 +93,6 @@ class WaveCNN7(nn.Module):
         self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
-        # Initial strided convolution
-        x = F.relu(self.bn0(self.strided_conv(x)))
-
         # Convolutional blocks
         for block in self.conv_blocks:
             x = block(x)
