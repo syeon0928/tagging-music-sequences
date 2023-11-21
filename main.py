@@ -1,29 +1,17 @@
 import torch
+import argparse
 from src.config import Config
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
 import src.model_alex as models
 
 
-def main():
-    # Load configuration
-    config = Config(
-        data_dir="data/",
-        train_annotations="mtat_train_label.csv",
-        val_annotations="mtat_val_label.csv",
-        test_annotations="mtat_test_label.csv",
-        sample_rate=16000,
-        target_length=29.1,
-        batch_size=32,
-        shuffle_train=True,
-        shuffle_val=False,
-        shuffle_test=False,
-        apply_transforms=True,
-        mel_spec_params={'n_fft': 512, 'hop_length': 256, 'n_mels': 96, 'top_db': 80},
-        model_class_name="FullyConvNet4",
-        learning_rate=0.001,
-        epochs=10,
-        model_path="path/to/save/model.pth")
+def main(config):
+    # Set mel_spec_params based on apply_transforms flag
+    if config.apply_transforms:
+        mel_spec_params = {'n_fft': 512, 'hop_length': 256, 'n_mels': 96, 'top_db': 80}
+    else:
+        mel_spec_params = None
 
     # Create dataloaders
     train_loader = get_dataloader(
@@ -33,7 +21,7 @@ def main():
         shuffle=config.shuffle_train,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
-        transform_params=config.mel_spec_params
+        transform_params=mel_spec_params
     )
 
     val_loader = get_dataloader(
@@ -43,7 +31,7 @@ def main():
         shuffle=config.shuffle_val,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
-        transform_params=config.mel_spec_params
+        transform_params=mel_spec_params
     )
 
     # Initialize the model
@@ -68,10 +56,32 @@ def main():
         shuffle=config.shuffle_test,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
-        transform_params=config.mel_spec_params
+        transform_params=mel_spec_params
     )
     trainer.evaluate(test_loader)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Audio Classification Training Script")
+
+    # Add arguments for each configuration parameter
+    parser.add_argument('--data_dir', type=str, default="data/", help='Data directory')
+    parser.add_argument('--train_annotations', type=str, default="mtat_train_label.csv")
+    parser.add_argument('--val_annotations', type=str, default="mtat_val_label.csv")
+    parser.add_argument('--test_annotations', type=str, default="mtat_test_label.csv")
+    parser.add_argument('--sample_rate', type=int, default=16000)
+    parser.add_argument('--target_length', type=float, default=29.1)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--shuffle_train', type=bool, default=True)
+    parser.add_argument('--shuffle_val', type=bool, default=False)
+    parser.add_argument('--shuffle_test', type=bool, default=False)
+    parser.add_argument('--apply_transforms', type=bool, default=True)
+    parser.add_argument('--model_class_name', type=str, default="FullyConvNet4")
+    parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--model_path', type=str, default="path/to/save/model.pth")
+
+    config = parser.parse_args()
+
+    print(config)
+    main(config)

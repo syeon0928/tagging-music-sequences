@@ -11,7 +11,6 @@ class Config(object):
                  shuffle_val,
                  shuffle_test,
                  apply_transforms,
-                 mel_spec_params,
                  model_class_name,
                  learning_rate,
                  epochs,
@@ -27,7 +26,6 @@ class Config(object):
         self.shuffle_val = shuffle_val
         self.shuffle_test = shuffle_test
         self.apply_transforms = apply_transforms
-        self.mel_spec_params = mel_spec_params if apply_transforms else None
         self.model_class_name = model_class_name
         self.learning_rate = learning_rate
         self.epochs = epochs
