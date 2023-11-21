@@ -2,18 +2,23 @@ import time
 import torch
 import os
 import numpy as np
+import torch.nn as nn
+import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc, average_precision_score
 
 
 class Trainer:
-    def __init__(self, model, train_loader, valid_loader, criterion, optimizer, device='cuda'):
+    def __init__(self, model, train_loader, valid_loader, learning_rate, device='cuda'):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
-        self.criterion = criterion
-        self.optimizer = optimizer
+        self.learning_rate = learning_rate
         self.device = device
+
+        self.criterion = nn.BCEWithLogitsLoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
         self.history = {'train_loss': [],
                         'train_roc_auc': [],
                         'train_pr_auc': [],

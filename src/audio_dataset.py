@@ -1,11 +1,10 @@
 import os
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from src import audio_util
 
 
-# TODO GPU Support
 class AudioDS(Dataset):
     def __init__(self,
                  annotations_file,
@@ -35,7 +34,7 @@ class AudioDS(Dataset):
 
     def __getitem__(self, idx):
         # Concatenated file path - Example: '../data/' + 'mtat/.......mp3'
-        audio_file = str(self.data_dir / self.annotations_file.loc[idx, 'filepath'])
+        audio_file = os.path.join(self.data_dir, self.annotations_file.loc[idx, 'filepath'])
 
         # Retrieve labels
         label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
@@ -60,7 +59,7 @@ class AudioDS(Dataset):
     # Get file path at a given index
     def get_filepath(self, idx):
         # Retrieve the file path for a given index
-        return str(self.data_dir / self.annotations_file.loc[idx, 'filepath'])
+        return os.path.join(self.data_dir, self.annotations_file.loc[idx, 'filepath'])
 
     def decode_labels(self, encoded_labels):
         # Decodes the one-hot encoded labels back to their class names
@@ -71,6 +70,17 @@ class AudioDS(Dataset):
         return decoded_labels
 
 
+def get_dataloader(annotations_file, data_dir, batch_size, shuffle, sample_rate, target_length, transform_params=None):
+    # Apply transformations if transform_params is provided
+    transformation = audio_util.get_audio_transforms(**transform_params) if transform_params else None
 
+    dataset = AudioDS(
+        annotations_file=annotations_file,
+        data_dir=data_dir,
+        target_sample_rate=sample_rate,
+        target_length=target_length,
+        transformation=transformation
+    )
 
-
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return dataloader
