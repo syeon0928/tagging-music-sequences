@@ -11,6 +11,7 @@ class Config(object):
                  shuffle_val,
                  shuffle_test,
                  apply_transforms,
+                 apply_augmentations,
                  model_class_name,
                  learning_rate,
                  epochs,
@@ -26,6 +27,7 @@ class Config(object):
         self.shuffle_val = shuffle_val
         self.shuffle_test = shuffle_test
         self.apply_transforms = apply_transforms
+        self.apply_augmentations = apply_augmentations
         self.model_class_name = model_class_name
         self.learning_rate = learning_rate
         self.epochs = epochs

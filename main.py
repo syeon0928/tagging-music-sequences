@@ -1,9 +1,11 @@
 import torch
 import argparse
+import random
 from src.config import Config
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
 import src.model_alex as models
+from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 
 
 def main(config):
@@ -13,6 +15,16 @@ def main(config):
     else:
         mel_spec_params = None
 
+    if config.apply_augmentations:
+        augmentations = []
+        pitch_shift_steps = random.randint(-4, 4)
+        time_stretch_factor = random.uniform(0.8, 1.25)
+        if config.apply_augmentations:
+            augmentations.append(PitchShiftAugmentation(pitch_shift_steps))
+            augmentations.append(TimeStretchAugmentation(time_stretch_factor))
+    else:
+        augmentations = None
+
     # Create dataloaders
     train_loader = get_dataloader(
         annotations_file=config.train_annotations,
@@ -21,7 +33,8 @@ def main(config):
         shuffle=config.shuffle_train,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
-        transform_params=mel_spec_params
+        transform_params=mel_spec_params,
+        augmentation=augmentations
     )
 
     val_loader = get_dataloader(
@@ -31,7 +44,7 @@ def main(config):
         shuffle=config.shuffle_val,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
-        transform_params=mel_spec_params
+        transform_params=mel_spec_params,
     )
 
     # Initialize the model
@@ -75,7 +88,8 @@ if __name__ == '__main__':
     parser.add_argument('--shuffle_train', type=bool, default=True)
     parser.add_argument('--shuffle_val', type=bool, default=False)
     parser.add_argument('--shuffle_test', type=bool, default=False)
-    parser.add_argument('--apply_transforms', type=bool, default=True)
+    parser.add_argument('--apply_transforms', type=bool, default=False)
+    parser.add_argument('--apply_augmentations', type=bool, default=False)
     parser.add_argument('--model_class_name', type=str, default="FullyConvNet4")
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--epochs', type=int, default=10)

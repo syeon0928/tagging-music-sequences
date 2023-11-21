@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from src import audio_util
+from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 
 
 class AudioDS(Dataset):
@@ -12,6 +13,7 @@ class AudioDS(Dataset):
                  target_sample_rate=16000,
                  target_length=30,
                  transformation=None,
+                 augmentation=None
                  ):
 
         self.annotations_file = annotations_file
@@ -19,6 +21,7 @@ class AudioDS(Dataset):
         self.sample_rate = target_sample_rate
         self.target_length = target_length
         self.transformation = transformation
+        self.augmentation = augmentation
 
         # Load annotations using pandas
         self.annotations_file = pd.read_csv(os.path.join(data_dir, annotations_file), index_col=0).reset_index(
@@ -47,14 +50,19 @@ class AudioDS(Dataset):
         audio = audio_util.resample(audio, self.sample_rate)
         audio = audio_util.pad_or_trunc(audio, self.target_length)
 
-        # Apply transformation if it's provided
+        signal, sample_rate = audio
+
+        if self.augmentation:
+            for aug in self.augmentation:
+                signal = aug.apply(signal, sample_rate)
+                audio = signal, sample_rate
+                audio = audio_util.pad_or_trunc(audio, self.target_length)
+                signal, sample_rate = audio
+
         if self.transformation:
-            signal, _ = audio
-            transformed_signal = self.transformation(signal)
-            return transformed_signal, label
-        else:
-            signal, _ = audio
-            return signal, label
+            signal = self.transformation(signal)
+
+        return signal, label
 
     # Get file path at a given index
     def get_filepath(self, idx):
@@ -70,7 +78,7 @@ class AudioDS(Dataset):
         return decoded_labels
 
 
-def get_dataloader(annotations_file, data_dir, batch_size, shuffle, sample_rate, target_length, transform_params=None):
+def get_dataloader(annotations_file, data_dir, batch_size, shuffle, sample_rate, target_length, transform_params=None, augmentation=None):
     # Apply transformations if transform_params is provided
     transformation = audio_util.get_audio_transforms(**transform_params) if transform_params else None
 
@@ -79,7 +87,8 @@ def get_dataloader(annotations_file, data_dir, batch_size, shuffle, sample_rate,
         data_dir=data_dir,
         target_sample_rate=sample_rate,
         target_length=target_length,
-        transformation=transformation
+        transformation=transformation,
+        augmentation=augmentation
     )
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
