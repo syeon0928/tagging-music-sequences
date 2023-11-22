@@ -78,7 +78,7 @@ class AudioDS(Dataset):
         return decoded_labels
 
 
-def get_dataloader(annotations_file, data_dir, batch_size, shuffle, sample_rate, target_length, transform_params=None, augmentation=None):
+def get_dataloader(annotations_file, data_dir, batch_size, shuffle, num_workers, sample_rate, target_length, transform_params=None, augmentation=None):
     # Apply transformations if transform_params is provided
     transformation = audio_util.get_audio_transforms(**transform_params) if transform_params else None
 

@@ -1,7 +1,6 @@
 import torch
 import argparse
 import random
-from src.config import Config
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
 import src.model_alex as models
@@ -9,8 +8,8 @@ from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentat
 
 
 def main(config):
-    # Set mel_spec_params based on apply_transforms flag
-    if config.apply_transforms:
+    # Set mel_spec_params based on apply_transformations flag
+    if config.apply_transformations:
         mel_spec_params = {'n_fft': 512, 'hop_length': 256, 'n_mels': 96, 'top_db': 80}
     else:
         mel_spec_params = None
@@ -31,6 +30,7 @@ def main(config):
         data_dir=config.data_dir,
         batch_size=config.batch_size,
         shuffle=config.shuffle_train,
+        num_workers=config.num_workers,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
         transform_params=mel_spec_params,
@@ -42,6 +42,7 @@ def main(config):
         data_dir=config.data_dir,
         batch_size=config.batch_size,
         shuffle=config.shuffle_val,
+        num_workers=config.num_workers,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
         transform_params=mel_spec_params,
@@ -67,6 +68,7 @@ def main(config):
         data_dir=config.data_dir,
         batch_size=config.batch_size,
         shuffle=config.shuffle_test,
+        num_workers=config.num_workers,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
         transform_params=mel_spec_params
@@ -75,7 +77,7 @@ def main(config):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Audio Classification Training Script")
+    parser = argparse.ArgumentParser(description="Audio Tagging Training Script")
 
     # Add arguments for each configuration parameter
     parser.add_argument('--data_dir', type=str, default="data/", help='Data directory')
@@ -88,12 +90,13 @@ if __name__ == '__main__':
     parser.add_argument('--shuffle_train', type=bool, default=True)
     parser.add_argument('--shuffle_val', type=bool, default=False)
     parser.add_argument('--shuffle_test', type=bool, default=False)
-    parser.add_argument('--apply_transforms', type=bool, default=False)
+    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--apply_transformations', type=bool, default=True)
     parser.add_argument('--apply_augmentations', type=bool, default=False)
     parser.add_argument('--model_class_name', type=str, default="FullyConvNet4")
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--model_path', type=str, default="path/to/save/model.pth")
+    parser.add_argument('--model_path', type=str, default="models/model.pth")
 
     config = parser.parse_args()
 

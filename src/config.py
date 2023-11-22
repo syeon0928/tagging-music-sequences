@@ -10,6 +10,7 @@ class Config(object):
                  shuffle_train,
                  shuffle_val,
                  shuffle_test,
+                 num_workers,
                  apply_transforms,
                  apply_augmentations,
                  model_class_name,
@@ -26,6 +27,7 @@ class Config(object):
         self.shuffle_train = shuffle_train
         self.shuffle_val = shuffle_val
         self.shuffle_test = shuffle_test
+        self.num_workers = num_workers
         self.apply_transforms = apply_transforms
         self.apply_augmentations = apply_augmentations
         self.model_class_name = model_class_name
