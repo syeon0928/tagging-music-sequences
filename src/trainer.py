@@ -29,57 +29,53 @@ class Trainer:
 
     def train(self, epochs):
         self.model.train()
+        print("Training started")
         start_time = time.time()
 
         # iterate over epochs
-        with tqdm(total=epochs, desc='Training', leave=True) as pbar:
-            for epoch in range(epochs):
-                total_loss_train = 0
-                predicted_labels_train = []
-                true_labels_train = []
+        for epoch in range(epochs):
+            total_loss_train = 0
+            predicted_labels_train = []
+            true_labels_train = []
 
-                # iterate over batches
-                for batch, labels in self.train_loader:
-                    batch, labels = batch.to(self.device), labels.to(self.device)
+            # iterate over batches
+            for batch, labels in self.train_loader:
+                batch, labels = batch.to(self.device), labels.to(self.device)
 
-                    # train
-                    self.optimizer.zero_grad()
-                    outputs = self.model(batch)
-                    loss = self.criterion(outputs, labels)
-                    loss.backward()
-                    self.optimizer.step()
+                # train
+                self.optimizer.zero_grad()
+                outputs = self.model(batch)
+                loss = self.criterion(outputs, labels)
+                loss.backward()
+                self.optimizer.step()
 
-                    total_loss_train += loss.item()
+                total_loss_train += loss.item()
 
-                    # Apply sigmoid to convert to probabilities
-                    probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
+                # Apply sigmoid to convert to probabilities
+                probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
 
-                    predicted_labels_train.append(probabilities)
-                    true_labels_train.append(labels.cpu().numpy())
+                predicted_labels_train.append(probabilities)
+                true_labels_train.append(labels.cpu().numpy())
 
-                # Calculate evaluation metrics from Training phase in current epoch
-                avg_loss_train = total_loss_train / len(self.train_loader)
-                self.history['train_loss'].append(avg_loss_train)
-                train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
-                self.history['train_roc_auc'].append(train_roc_auc)
-                self.history['train_pr_auc'].append(train_pr_auc)
+            # Calculate evaluation metrics from Training phase in current epoch
+            avg_loss_train = total_loss_train / len(self.train_loader)
+            self.history['train_loss'].append(avg_loss_train)
+            train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
+            self.history['train_roc_auc'].append(train_roc_auc)
+            self.history['train_pr_auc'].append(train_pr_auc)
 
-                # Retrieve evaluation metrics from validation phase in current epoch
-                val_loss, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
-                self.history['val_loss'].append(val_loss)
-                self.history['val_roc_auc'].append(val_roc_auc)
-                self.history['val_pr_auc'].append(val_pr_auc)
+            # Retrieve evaluation metrics from validation phase in current epoch
+            val_loss, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
+            self.history['val_loss'].append(val_loss)
+            self.history['val_roc_auc'].append(val_roc_auc)
+            self.history['val_pr_auc'].append(val_pr_auc)
 
-                # Update progress bar after each epoch
-                pbar.update(1)
-                pbar.set_postfix({'epoch': epoch + 1, 'training loss': avg_loss_train, 'validation loss': val_loss})
-
-                # Print performance metrics
-                elapsed_time = time.time() - start_time
-                print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time:.2f} seconds")
-                print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
-                print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
-                print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
+            # Print performance metrics
+            elapsed_time = time.time() - start_time
+            print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time:.2f} seconds")
+            print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
+            print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
+            print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
 
         # Calculate and print total training elapsed time
         total_elapsed_time = time.time() - start_time
