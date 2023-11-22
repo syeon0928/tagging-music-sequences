@@ -17,4 +17,4 @@ module load Anaconda3
 source activate aml-project
 
 # Run script
-python train.py --num_workers
+python train.py --apply_transformations=True --apply_augmentations=False
