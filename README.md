@@ -1,6 +1,47 @@
 # Advanced Machine Learning Final Project
 
-## HPC Setup
+## Training (`train.py`)
+
+### Overview
+`train.py` is a Python script designed for training audio tagging models. It supports various data transformations, augmentations, and utilizes a custom training loop encapsulated within a `Trainer` class. The script is highly configurable through command-line arguments, allowing for flexible experimentation with different model architectures, data preprocessing techniques, and training parameters.
+
+### Installation
+Ensure that all required Python packages are installed.
+
+```bash
+pip install -r requirements.txt
+```
+
+### Usage
+
+```bash
+python train.py --data_dir "path/to/data" --model_class_name "ModelClassName" --epochs 20 --learning_rate 0.001 --batch_size 32
+```
+
+### Configuration Parameters
+
+- `--data_dir`: Directory containing the audio data.
+- `--train_annotations`: Path to the training annotations file.
+- `--val_annotations`: Path to the validation annotations file.
+- `--test_annotations`: Path to the test annotations file.
+- `--sample_rate`: Sample rate for audio processing.
+- `--target_length`: Target length of audio samples in seconds.
+- `--batch_size`: Batch size for training.
+- `--shuffle_train`: Enable shuffling of training data.
+- `--shuffle_val`: Enable shuffling of validation data.
+- `--shuffle_test`: Enable shuffling of test data.
+- `--num_workers`: Number of workers for data loading.
+- `--apply_transformations`: Apply mel spectrogram transformations.
+- `--apply_augmentations`: Apply pitch shift and time-stretch augmentations.
+- `--model_class_name`: Class name of the model to be used.
+- `--learning_rate`: Learning rate for training.
+- `--epochs`: Number of training epochs.
+- `--model_path`: Directory to save the trained model.
+
+
+## HPC
+
+### Setup
 
 1. login to hpc
 2. Git setup on HPC:
@@ -15,19 +56,6 @@
 6. copy ssh command from log file and run on another terminal ex) `ssh -N -L 8248:desktop2:8248 [seuh@hpc.itu.dk]`
 7. open the URL from the log file (last link)
 
-## Git commands
-
-Process to update local repo:
-1. Get updates from remote repo: `git fetch`
-2. Merge remote into local repo: `git pull`
-
-To update repo with local changes:
-1. Stage your changes: `git add -A` or `git add specific_file` (if you only want to commit one file)
-2. Commit your changes: `git commit -m 'INSERT COMMIT DESCRIPTION HERE`
-3. Push to remote repo: `git push origin main` or simply `git push`
-
-
-git fetch → pull / add file → commit -m “message” → git push
 ## Tagging music sequences.
 
 ![](assets/mp_musictag.png)

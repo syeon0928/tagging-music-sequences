@@ -9,20 +9,7 @@ def open(audio_file):
     return waveform, sample_rate
 
 
-def get_audio_channels(waveform, sample_rate):
-    num_channels = waveform.shape[0]  # The shape is (num_channels, num_samples)
-    return num_channels
-
-
-def get_audio_duration(waveform, sample_rate):
-    num_samples = waveform.shape[1]
-    duration_seconds = num_samples / sample_rate
-    return duration_seconds
-
-
-def resample(audio, new_sample_rate):
-    waveform, sample_rate = audio
-
+def resample(waveform, sample_rate, new_sample_rate):
     if sample_rate == new_sample_rate:
         return waveform, sample_rate
 
@@ -37,9 +24,7 @@ def resample(audio, new_sample_rate):
     return resampled_waveform, new_sample_rate
 
 
-def rechannel(audio, new_channel):
-    waveform, sample_rate = audio
-
+def rechannel(waveform, sample_rate, new_channel):
     if waveform.shape[0] == new_channel:
         # Nothing to do
         return waveform, sample_rate
@@ -54,8 +39,7 @@ def rechannel(audio, new_channel):
     return resampled_waveform, sample_rate
 
 
-def pad_or_trunc(audio, max_s):
-    waveform, sample_rate = audio
+def pad_or_trunc(waveform, sample_rate, max_s):
     num_rows, waveform_len = waveform.shape
     max_len = int(sample_rate * max_s)
 
