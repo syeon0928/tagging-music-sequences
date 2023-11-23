@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_class_name', type=str, default="FullyConvNet4")
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--model_path', type=str, default="models/model.pth")
+    parser.add_argument('--model_path', type=str, default="models")
 
     config = parser.parse_args()
 

@@ -46,24 +46,22 @@ class AudioAugmentor:
 
     # Augmentation methods
     @staticmethod
-    def pitch_shift(audio, n_steps=4):
-        waveform, sample_rate = audio
+    def pitch_shift(waveform, sample_rate, n_steps=4):
         waveform_shifted = librosa.effects.pitch_shift(waveform.numpy(), sr=sample_rate, n_steps=n_steps)
         return torch.from_numpy(waveform_shifted), sample_rate
 
     @staticmethod
-    def time_stretch(audio, stretch_factor=1.0):
-        waveform, sample_rate = audio
+    def time_stretch(waveform, sample_rate, stretch_factor=1.0):
         waveform_stretched = librosa.effects.time_stretch(waveform.numpy(), rate=stretch_factor)
         return torch.from_numpy(waveform_stretched), sample_rate
 
-    def apply_augmentation(self, audio, augmentation, params):
+    def apply_augmentation(self, waveform, sample_rate, augmentation, params):
         if augmentation == 'pitch_shift':
-            return self.pitch_shift(audio, **params)
+            return self.pitch_shift(waveform, sample_rate, **params)
         elif augmentation == 'time_stretch':
-            return self.time_stretch(audio, **params)
+            return self.time_stretch(waveform, sample_rate, **params)
         else:
-            return audio
+            return waveform, sample_rate
 
     def random_augment(self, waveform, sample_rate):
         chosen_augmentation = random.choice(self.augmentations)

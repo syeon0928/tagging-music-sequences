@@ -1,4 +1,5 @@
 import time
+import datetime
 import torch
 import os
 import numpy as np
@@ -71,15 +72,16 @@ class Trainer:
             self.history['val_pr_auc'].append(val_pr_auc)
 
             # Print performance metrics
-            elapsed_time = time.time() - start_time
-            print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time:.2f} seconds")
+            elapsed_time = datetime.timedelta(seconds=time.time() - start_time)
+            print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time}") 
             print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
             print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
             print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
+            print()
 
         # Calculate and print total training elapsed time
-        total_elapsed_time = time.time() - start_time
-        print(f"Total training time: {total_elapsed_time:.2f} seconds")
+        total_elapsed_time = datetime.timedelta(seconds=time.time() - start_time)
+        print(f"Total training time: {total_elapsed_time:}")
 
         return None
 
@@ -127,19 +129,20 @@ class Trainer:
 
         return roc_auc, pr_auc
 
-    def save_model(self, path):
-        base_path, filename = os.path.split(path)
+    def save_model(self, directory):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        
+        model_name = type(self.model).__name__
         timestamp = time.strftime("%Y%m%d-%H%M")
-        name, ext = os.path.splitext(filename)
-        new_filename = f"{name}_{timestamp}{ext}"
-        new_path = os.path.join(base_path, new_filename)
+        filename = f"{model_name}_{timestamp}.pth"
+        path = os.path.join(directory, filename)
 
-        # Create a dictionary to save both the model state dictionary and the class attributes
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'history': self.history
         }
-        torch.save(checkpoint, new_path)
+        torch.save(checkpoint, path)
 
     def load_model(self, path):
         # Load the checkpoint

@@ -43,21 +43,17 @@ class AudioDS(Dataset):
         label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
         label = torch.from_numpy(label)
 
-        # Load audio as tuple: (waveform, sample_rate)
-        audio = audio_util.open(audio_file)
+        # Load audio as unpacked tuple: waveform, sample_rate
+        signal, sample_rate = audio_util.open(audio_file)
 
         # Set sampling rate and audio length
-        audio = audio_util.resample(audio, self.sample_rate)
-        audio = audio_util.pad_or_trunc(audio, self.target_length)
-
-        signal, sample_rate = audio
+        signal, sample_rate = audio_util.resample(signal, sample_rate, self.sample_rate)
+        signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
 
         if self.augmentation:
             for aug in self.augmentation:
                 signal = aug.apply(signal, sample_rate)
-                audio = signal, sample_rate
-                audio = audio_util.pad_or_trunc(audio, self.target_length)
-                signal, sample_rate = audio
+                signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
 
         if self.transformation:
             signal = self.transformation(signal)
@@ -91,5 +87,5 @@ def get_dataloader(annotations_file, data_dir, batch_size, shuffle, num_workers,
         augmentation=augmentation
     )
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return dataloader
