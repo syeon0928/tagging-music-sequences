@@ -1,22 +1,22 @@
 # Set path variables
-import os
-import sys
-from pathlib import Path
-
-cwd = os.getcwd()
-project_dir = os.path.abspath(os.path.join(cwd, os.pardir))
-sys.path.append(project_dir)
-data_path = os.path.join(project_dir, 'data/')
-from src.audio_dataset import AudioDS
-from torch.utils.data import DataLoader, Subset
-from trainer import Trainer
+# import os
+# import sys
+# from pathlib import Path
+#
+# cwd = os.getcwd()
+# project_dir = os.path.abspath(os.path.join(cwd, os.pardir))
+# sys.path.append(project_dir)
+# data_path = os.path.join(project_dir, 'data/')
+# from src.audio_dataset import AudioDS
+# from torch.utils.data import DataLoader, Subset
+# from trainer import Trainer
 import torch
 from torch import nn
-import torch.optim as optim
-from torchsummary import summary
-from tqdm import tqdm
+# import torch.optim as optim
+# from torchsummary import summary
+# from tqdm import tqdm
 import torch.nn.functional as F
-import numpy as np
+# import numpy as np
 
 
 class WaveCNN9(nn.Module):

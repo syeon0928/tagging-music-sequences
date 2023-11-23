@@ -3,7 +3,7 @@ import argparse
 import random
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
-import src.model_alex as models
+import src.models as models
 from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 
 

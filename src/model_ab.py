@@ -1,18 +1,6 @@
-import torch
-from torch import nn
 import torch.nn.functional as F
-
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-
-from torchsummary import summary
-
-from src import audio_util
-from src.audio_dataset import AudioDS
-from src.trainer import Trainer
-# from src.model_alex import FullyConvNet4, FullyConvNet5
 
 
 # Architecture similar to this paper:
@@ -88,83 +76,3 @@ class FullyConvNet5(nn.Module):
         x = torch.flatten(x, 1)
 
         return x
-
-
-def main():
-    # Set device to GPU if possible
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.cuda.is_available()
-
-    # Load label annotation csv
-    train_annotations = 'mtat_train_label.csv'
-    val_annotations = 'mtat_val_label.csv'
-    test_annotations = 'mtat_test_label.csv'
-
-    # Data path
-    from pathlib import Path
-    cwd = Path.cwd()
-    DATA_DIR = cwd.parent / 'data'
-
-    # Transformations on dataset
-    SAMPLE_RATE = 16000
-    DURATION_IN_SEC = 29.1
-    MEL_SPEC_DB_TRANSFORMATION = audio_util.get_audio_transforms(SAMPLE_RATE,
-                                                                 n_fft=512,
-                                                                 hop_length=256,
-                                                                 n_mels=96,
-                                                                 top_db=80)
-
-    train_data = AudioDS(annotations_file=train_annotations,
-                         data_dir=DATA_DIR,
-                         target_sample_rate=SAMPLE_RATE,
-                         target_length=DURATION_IN_SEC,
-                         transformation=MEL_SPEC_DB_TRANSFORMATION)
-
-    val_data = AudioDS(annotations_file=val_annotations,
-                       data_dir=DATA_DIR,
-                       target_sample_rate=SAMPLE_RATE,
-                       target_length=DURATION_IN_SEC,
-                       transformation=MEL_SPEC_DB_TRANSFORMATION)
-
-    test_data = AudioDS(annotations_file=val_annotations,
-                        data_dir=DATA_DIR,
-                        target_sample_rate=SAMPLE_RATE,
-                        target_length=DURATION_IN_SEC,
-                        transformation=MEL_SPEC_DB_TRANSFORMATION)
-
-    # Hyperparameters
-    BATCH_SIZE = 32
-    LEARNING_RATE = 0.001
-    EPOCHS = 10
-
-    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
-    val_dataloader = DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=False)
-    test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=False)
-
-    # Display batch information
-    train_features, train_labels = next(iter(train_dataloader))
-    print(f"Feature batch shape: {train_features.size()}")
-    print(f"Labels batch shape: {train_labels.size()}")
-
-    ### FCN4 Model
-    # Instantiate model
-    fcn4 = FullyConvNet4()
-
-    # Instantiate trainer
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(fcn4.parameters(), lr=LEARNING_RATE)
-    trainer = Trainer(fcn4, train_dataloader, val_dataloader, criterion, optimizer, device)
-
-    # Model summary
-    input_size = (train_features.size()[1:])
-    print(summary(fcn4, input_size))
-
-    trainer.train(epochs=EPOCHS)
-    trainer.evaluate(test_dataloader)
-
-    path = '../models/spec_fcn4.pth'
-    trainer.save_model(path)
-
-
-if __name__ == '__main__':
-    main()
