@@ -6,11 +6,16 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-from sklearn.metrics import roc_auc_score, precision_recall_curve, auc, average_precision_score
+from sklearn.metrics import (
+    roc_auc_score,
+    precision_recall_curve,
+    auc,
+    average_precision_score,
+)
 
 
 class Trainer:
-    def __init__(self, model, train_loader, valid_loader, learning_rate, device='cuda'):
+    def __init__(self, model, train_loader, valid_loader, learning_rate, device="cuda"):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -20,15 +25,16 @@ class Trainer:
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-        self.history = {'train_loss': [],
-                        'train_roc_auc': [],
-                        'train_pr_auc': [],
-                        'val_loss': [],
-                        'val_roc_auc': [],
-                        'val_pr_auc': []
-                        }
+        self.history = {
+            "train_loss": [],
+            "train_roc_auc": [],
+            "train_pr_auc": [],
+            "val_loss": [],
+            "val_roc_auc": [],
+            "val_pr_auc": [],
+        }
 
-    def train(self, epochs):
+    def train(self, epochs, save_directory):
         self.model.train()
         print("Training started")
         start_time = time.time()
@@ -60,27 +66,39 @@ class Trainer:
 
             # Calculate evaluation metrics from Training phase in current epoch
             avg_loss_train = total_loss_train / len(self.train_loader)
-            self.history['train_loss'].append(avg_loss_train)
-            train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
-            self.history['train_roc_auc'].append(train_roc_auc)
-            self.history['train_pr_auc'].append(train_pr_auc)
+            self.history["train_loss"].append(avg_loss_train)
+            train_roc_auc, train_pr_auc = self.performance_metrics(
+                predicted_labels_train, true_labels_train
+            )
+            self.history["train_roc_auc"].append(train_roc_auc)
+            self.history["train_pr_auc"].append(train_pr_auc)
 
             # Retrieve evaluation metrics from validation phase in current epoch
             val_loss, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader)
-            self.history['val_loss'].append(val_loss)
-            self.history['val_roc_auc'].append(val_roc_auc)
-            self.history['val_pr_auc'].append(val_pr_auc)
+            self.history["val_loss"].append(val_loss)
+            self.history["val_roc_auc"].append(val_roc_auc)
+            self.history["val_pr_auc"].append(val_pr_auc)
 
             # Print performance metrics
-            elapsed_time = datetime.timedelta(seconds=time.time() - start_time)
-            print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time}") 
+            elapsed_time = (
+                datetime.datetime.min
+                + datetime.timedelta(seconds=time.time() - start_time)
+            ).strftime("%H:%M:%S")
+            print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time}")
             print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
-            print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
+            print(
+                f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}"
+            )
             print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
             print()
 
+            # Save model state after epoch
+            self.save_model(save_directory, epoch)
+
         # Calculate and print total training elapsed time
-        total_elapsed_time = datetime.timedelta(seconds=time.time() - start_time)
+        total_elapsed_time = (
+            datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)
+        ).strftime("%H:%M:%S")
         print(f"Total training time: {total_elapsed_time:}")
 
         return None
@@ -124,28 +142,30 @@ class Trainer:
 
         # Calculate performance metrics
         # use averaging across labels for ROC AUC, PR AUC
-        roc_auc = roc_auc_score(true_labels, predicted_labels, average='macro', multi_class='ovo')
-        pr_auc = average_precision_score(true_labels, predicted_labels, average='macro')
+        roc_auc = roc_auc_score(
+            true_labels, predicted_labels, average="macro", multi_class="ovo"
+        )
+        pr_auc = average_precision_score(true_labels, predicted_labels, average="macro")
 
         return roc_auc, pr_auc
 
-    def save_model(self, directory):
+    def save_model(self, directory, epoch):
         if not os.path.exists(directory):
             os.makedirs(directory)
-        
+
         model_name = type(self.model).__name__
         timestamp = time.strftime("%Y%m%d-%H%M")
-        filename = f"{model_name}_{timestamp}.pth"
+        filename = f"{model_name}_epoch{epoch + 1}_{timestamp}.pth"  # Include epoch number in filename
         path = os.path.join(directory, filename)
 
         checkpoint = {
-            'model_state_dict': self.model.state_dict(),
-            'history': self.history
+            "model_state_dict": self.model.state_dict(),
+            "history": self.history,
         }
         torch.save(checkpoint, path)
 
     def load_model(self, path):
         # Load the checkpoint
         checkpoint = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.history = checkpoint['history']
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.history = checkpoint["history"]
