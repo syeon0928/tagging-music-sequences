@@ -5,13 +5,7 @@ import os
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
-from sklearn.metrics import (
-    roc_auc_score,
-    precision_recall_curve,
-    auc,
-    average_precision_score,
-)
+from sklearn.metrics import (roc_auc_score, average_precision_score)
 
 
 class Trainer:
@@ -33,6 +27,8 @@ class Trainer:
             "val_roc_auc": [],
             "val_pr_auc": [],
         }
+        self.best_val_loss = float('inf')
+        self.best_model_state_dict = None
 
     def train(self, epochs, save_directory):
         self.model.train()
@@ -85,8 +81,17 @@ class Trainer:
             print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
             print()
 
-            # Save model state after epoch
-            self.save_model(save_directory, epoch)
+            # Check if the current validation loss is better than the best so far
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+
+                # Save the current model state dictionary as the best
+                self.best_model_state_dict = self.model.state_dict()
+
+        # After the training loop, save the best model state dictionary
+        if self.best_model_state_dict is not None:
+            self.model.load_state_dict(self.best_model_state_dict)
+            self.save_model(save_directory)
 
         # Calculate and print total training elapsed time
         total_elapsed_time = ( datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time) ).strftime("%H:%M:%S")
@@ -142,13 +147,13 @@ class Trainer:
 
         return roc_auc, pr_auc
 
-    def save_model(self, directory, epoch):
+    def save_model(self, directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         model_name = type(self.model).__name__
         timestamp = time.strftime("%Y%m%d-%H%M")
-        filename = f"{model_name}_epoch{epoch + 1}_{timestamp}.pth"  # Include epoch number in filename
+        filename = f"{model_name}_best_{timestamp}.pth"
         path = os.path.join(directory, filename)
 
         checkpoint = {
