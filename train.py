@@ -91,16 +91,8 @@ if __name__ == "__main__":
     parser.add_argument("--shuffle_val", action="store_true")
     parser.add_argument("--shuffle_test", action="store_true")
     parser.add_argument("--num_workers", type=int, default=0)
-    parser.add_argument(
-        "--apply_transformations",
-        action="store_true",
-        help="Apply mel spec transformations",
-    )
-    parser.add_argument(
-        "--apply_augmentations",
-        action="store_true",
-        help="Apply pitch and time stretching augmentations",
-    )
+    parser.add_argument("--apply_transformations", action="store_true", help="Apply mel spec transformations")
+    parser.add_argument("--apply_augmentations", action="store_true", help="Apply pitch and time stretching augmentations")
     parser.add_argument("--model_class_name", type=str, default="FullyConvNet4")
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--epochs", type=int, default=10)

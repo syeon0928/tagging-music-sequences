@@ -7,15 +7,15 @@ from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentat
 
 
 class AudioDS(Dataset):
-    def __init__(self,
-                 annotations_file,
-                 data_dir,
-                 target_sample_rate=16000,
-                 target_length=30,
-                 transformation=None,
-                 augmentation=None
-                 ):
-
+    def __init__(
+            self,
+            annotations_file,
+            data_dir,
+            target_sample_rate=16000,
+            target_length=30,
+            transformation=None,
+            augmentation=None,
+    ):
         self.annotations_file = annotations_file
         self.data_dir = data_dir
         self.sample_rate = target_sample_rate
@@ -28,19 +28,19 @@ class AudioDS(Dataset):
             drop=True)
 
         # Convert each column in class_columns to float
-        self.class_columns = self.annotations_file.drop(columns=['filepath']).columns.to_list()
+        self.class_columns = self.annotations_file.drop(columns=["filepath"]).columns.to_list()
         for col in self.class_columns:
-            self.annotations_file[col] = self.annotations_file[col].astype('float')
+            self.annotations_file[col] = self.annotations_file[col].astype("float")
 
     def __len__(self):
         return len(self.annotations_file)
 
     def __getitem__(self, idx):
         # Concatenated file path - Example: '../data/' + 'mtat/.......mp3'
-        audio_file = os.path.join(self.data_dir, self.annotations_file.loc[idx, 'filepath'])
+        audio_file = os.path.join(self.data_dir, self.annotations_file.loc[idx, "filepath"])
 
         # Retrieve labels
-        label = self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy()
+        label = (self.annotations_file.loc[idx, self.class_columns].astype(float).to_numpy())
         label = torch.from_numpy(label)
 
         # Load audio as unpacked tuple: waveform, sample_rate
@@ -58,12 +58,12 @@ class AudioDS(Dataset):
         if self.transformation:
             signal = self.transformation(signal)
 
-        return signal, label
+        return signal, label, audio_file
 
     # Get file path at a given index
     def get_filepath(self, idx):
         # Retrieve the file path for a given index
-        return os.path.join(self.data_dir, self.annotations_file.loc[idx, 'filepath'])
+        return os.path.join(self.data_dir, self.annotations_file.loc[idx, "filepath"])
 
     def decode_labels(self, encoded_labels):
         # Decodes the one-hot encoded labels back to their class names
@@ -74,9 +74,19 @@ class AudioDS(Dataset):
         return decoded_labels
 
 
-def get_dataloader(annotations_file, data_dir, batch_size, shuffle, num_workers, sample_rate, target_length, transform_params=None, augmentation=None):
+def get_dataloader(
+        annotations_file,
+        data_dir,
+        batch_size,
+        shuffle,
+        num_workers,
+        sample_rate,
+        target_length,
+        transform_params=None,
+        augmentation=None,
+):
     # Apply transformations if transform_params is provided
-    transformation = audio_util.get_audio_transforms(**transform_params) if transform_params else None
+    transformation = (audio_util.get_audio_transforms(**transform_params) if transform_params else None)
 
     dataset = AudioDS(
         annotations_file=annotations_file,
@@ -84,7 +94,7 @@ def get_dataloader(annotations_file, data_dir, batch_size, shuffle, num_workers,
         target_sample_rate=sample_rate,
         target_length=target_length,
         transformation=transformation,
-        augmentation=augmentation
+        augmentation=augmentation,
     )
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
