@@ -35,6 +35,7 @@ class Trainer:
         print("Training started")
         start_time = time.time()
 
+        ### BEGIN TRAINING LOOP
         # iterate over epochs
         for epoch in range(epochs):
             total_loss_train = 0
@@ -60,7 +61,7 @@ class Trainer:
                 predicted_labels_train.append(probabilities)
                 true_labels_train.append(labels.cpu().numpy())
 
-            # Calculate evaluation metrics from Training phase in current epoch
+            # Calculate evaluation metrics from training phase in current epoch
             avg_loss_train = total_loss_train / len(self.train_loader)
             self.history["train_loss"].append(avg_loss_train)
             train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
@@ -81,17 +82,20 @@ class Trainer:
             print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
             print()
 
-            # Check if the current validation loss is better than the best so far
+            # Save model state if validation loss improved
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
-
-                # Save the current model state dictionary as the best
                 self.best_model_state_dict = self.model.state_dict()
 
-        # After the training loop, save the best model state dictionary
+        ### END OF TRAINING LOOP
+
+        # Save final model
+        self.save_model(save_directory, model_type="final")
+
+        # Save the best model
         if self.best_model_state_dict is not None:
             self.model.load_state_dict(self.best_model_state_dict)
-            self.save_model(save_directory)
+            self.save_model(save_directory, model_type="best")
 
         # Calculate and print total training elapsed time
         total_elapsed_time = ( datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time) ).strftime("%H:%M:%S")
@@ -147,13 +151,20 @@ class Trainer:
 
         return roc_auc, pr_auc
 
-    def save_model(self, directory):
+    def save_model(self, directory, model_type="final"):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         model_name = type(self.model).__name__
         timestamp = time.strftime("%Y%m%d-%H%M")
-        filename = f"{model_name}_best_{timestamp}.pth"
+
+        if model_type == "best":
+            filename = f"{model_name}_best_{timestamp}.pth"
+        elif model_type == "final":
+            filename = f"{model_name}_final_{timestamp}.pth"
+        else:
+            filename = f"{model_name}_{model_type}_{timestamp}.pth"
+
         path = os.path.join(directory, filename)
 
         checkpoint = {

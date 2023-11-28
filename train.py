@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_annotations", type=str, default="mtat_test_label.csv")
     parser.add_argument("--sample_rate", type=int, default=16000)
     parser.add_argument("--target_length", type=float, default=29.1)
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--shuffle_train", action="store_true")
     parser.add_argument("--shuffle_val", action="store_true")
     parser.add_argument("--shuffle_test", action="store_true")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--apply_augmentations", action="store_true", help="Apply pitch and time stretching augmentations")
     parser.add_argument("--model_class_name", type=str, default="FullyConvNet4")
     parser.add_argument("--learning_rate", type=float, default=0.001)
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--model_path", type=str, default="models")
 
     config = parser.parse_args()
