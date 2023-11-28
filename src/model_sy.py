@@ -1,22 +1,22 @@
 # Set path variables
-# import os
-# import sys
-# from pathlib import Path
-#
-# cwd = os.getcwd()
-# project_dir = os.path.abspath(os.path.join(cwd, os.pardir))
-# sys.path.append(project_dir)
-# data_path = os.path.join(project_dir, 'data/')
-# from src.audio_dataset import AudioDS
-# from torch.utils.data import DataLoader, Subset
-# from trainer import Trainer
+import os
+import sys
+from pathlib import Path
+
+cwd = os.getcwd()
+project_dir = os.path.abspath(os.path.join(cwd, os.pardir))
+sys.path.append(project_dir)
+data_path = os.path.join(project_dir, 'data/')
+from src.audio_dataset import AudioDS
+from torch.utils.data import DataLoader, Subset
+from trainer import Trainer
 import torch
 from torch import nn
-# import torch.optim as optim
-# from torchsummary import summary
-# from tqdm import tqdm
+import torch.optim as optim
+from torchsummary import summary
+from tqdm import tqdm
 import torch.nn.functional as F
-# import numpy as np
+import numpy as np
 
 
 class WaveCNN9(nn.Module):
@@ -153,6 +153,7 @@ class WaveCNN5(nn.Module):
 
 
 if __name__ == '__main__':
+    print('Starting')
     # setup cuda device
     device = (
         "cuda"
@@ -211,7 +212,7 @@ if __name__ == '__main__':
     # trainer = Trainer(wavecnn9, train_dataloader, val_dataloader, criterion, optimizer, device)
     # # train
     # trainer.train(epochs=EPOCHS)
-    # trainer.save_model('../model/test.pth')
+    # trainer.save_model('../models/test.pth')
 
     # CNN 7
     # check the summary
@@ -228,7 +229,7 @@ if __name__ == '__main__':
     # trainer7 = Trainer(wavecnn7, train_dataloader, val_dataloader, criterion, optimizer, device)
     # # train
     # trainer7.train(epochs=EPOCHS)
-    # trainer7.save_model('../model/waveform_cnn9.pth')
+    # trainer7.save_model('../models/waveform_cnn9.pth')
 
     # CNN 5
     # check the summary
@@ -240,10 +241,8 @@ if __name__ == '__main__':
 
     # Train
     # Instantiate trainer
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(wavecnn5.parameters(), lr=LEARNING_RATE)
-    trainer5 = Trainer(wavecnn5, train_dataloader, val_dataloader, criterion, optimizer, device)
+    trainer5 = Trainer(wavecnn5, train_dataloader, val_dataloader, 0.001, device)
     # train
-    trainer5.train(epochs=EPOCHS)
-    trainer5.save_model('../model/waveform_cnn5.pth')
+    trainer5.train(EPOCHS, '../models')
+    # trainer5.save_model('../models/waveform_cnn5.pth')
 
