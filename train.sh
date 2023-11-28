@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name training
-#SBATCH --output=scripts/training-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --output=scripts/model-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16        
-#SBATCH --mem=64G
+#SBATCH --mem=16G
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 1
 #SBATCH --time 16:00:00
@@ -17,4 +17,4 @@ module load Anaconda3
 source activate aml-project
 
 # Run script
-python train.py --shuffle-train --num_workers=16 --apply_transformations --apply_augmentations
+python train.py --model_class_name="" --shuffle_train --apply_transformations --num_workers=16
