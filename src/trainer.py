@@ -63,8 +63,6 @@ class Trainer:
             # Retrieve training metrics
             avg_loss_train = total_loss_train / len(self.train_loader)
             train_roc_auc, train_pr_auc = self.get_auc(predicted_labels_train, true_labels_train)
-            print(train_roc_auc)
-            print(train_pr_auc)
 
             # Store train metrics
             self.history["train_loss"].append(avg_loss_train)
