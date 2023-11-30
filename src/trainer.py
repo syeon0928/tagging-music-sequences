@@ -5,7 +5,7 @@ import os
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import (roc_auc_score, average_precision_score)
+from sklearn import metrics
 
 
 class Trainer:
@@ -57,19 +57,24 @@ class Trainer:
 
                 # Apply sigmoid to convert to probabilities
                 probabilities = torch.sigmoid(outputs).detach().cpu().numpy()
-
                 predicted_labels_train.append(probabilities)
                 true_labels_train.append(labels.cpu().numpy())
 
-            # Calculate evaluation metrics from training phase in current epoch
+            # Retrieve training metrics
             avg_loss_train = total_loss_train / len(self.train_loader)
+            train_roc_auc, train_pr_auc = self.get_auc(predicted_labels_train, true_labels_train)
+            print(train_roc_auc)
+            print(train_pr_auc)
+
+            # Store train metrics
             self.history["train_loss"].append(avg_loss_train)
-            train_roc_auc, train_pr_auc = self.performance_metrics(predicted_labels_train, true_labels_train)
             self.history["train_roc_auc"].append(train_roc_auc)
             self.history["train_pr_auc"].append(train_pr_auc)
 
-            # Retrieve evaluation metrics from validation phase in current epoch
+            # Retrieve validation metrics
             val_loss, val_roc_auc, val_pr_auc = self.evaluate(self.valid_loader, validation=True)
+
+            # Store validation metrics
             self.history["val_loss"].append(val_loss)
             self.history["val_roc_auc"].append(val_roc_auc)
             self.history["val_pr_auc"].append(val_pr_auc)
@@ -78,7 +83,7 @@ class Trainer:
             elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime("%H:%M:%S")
             print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time}")
             print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
-            print( f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}" )
+            print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
             print(f"Training PR AUC: {train_pr_auc}, Validation PR AUC: {val_pr_auc}")
             print()
 
@@ -128,26 +133,22 @@ class Trainer:
 
         # calculate performance metrics
         avg_loss = total_loss / len(dataloader)
-        roc_auc, pr_auc = self.performance_metrics(predicted_labels, true_labels)
+        roc_auc, pr_auc = self.get_auc(predicted_labels, true_labels)
 
         if validation:
             return avg_loss, roc_auc, pr_auc
         return avg_loss, roc_auc, pr_auc, predicted_labels, true_labels, filepaths
 
     # Implement function to retrieve metrics from predicted and true labels
-    def performance_metrics(self, predicted_labels, true_labels):
+    def get_auc(self, predicted_labels, true_labels):
         # Convert lists to numpy arrays
         predicted_labels = np.concatenate(predicted_labels)
         true_labels = np.concatenate(true_labels)
 
-        # Threshold for multi-label accuracy
-        threshold = 0.5
-        predicted = (predicted_labels > threshold).astype(int)
-
         # Calculate performance metrics
         # use averaging across labels for ROC AUC, PR AUC
-        roc_auc = roc_auc_score(true_labels, predicted_labels, average="macro", multi_class="ovo")
-        pr_auc = average_precision_score(true_labels, predicted_labels, average="macro")
+        roc_auc = metrics.roc_auc_score(true_labels, predicted_labels, average="macro", multi_class="ovo")
+        pr_auc = metrics.average_precision_score(true_labels, predicted_labels, average="macro")
 
         return roc_auc, pr_auc
 

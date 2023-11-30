@@ -74,6 +74,6 @@ class FCN5(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
         x = self.dense(x)
-        x = nn.Sigmoid()(x)
+        # x = nn.Sigmoid()(x)
 
         return x
