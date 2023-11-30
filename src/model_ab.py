@@ -37,7 +37,7 @@ class FCN3(nn.Module):
         self.mp3 = nn.MaxPool2d((2, 4))
 
         # Dense
-        self.dense = nn.Linear(64, num_classes) # Adjust the input size as needed
+        self.dense = nn.Linear(64 * 12 * 28, num_classes) # Adjust the input size as needed
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
