@@ -26,13 +26,11 @@ python train.py --data_dir "path/to/data" --model_class_name "ModelClassName" --
 - `--test_annotations`: Path to the test annotations file.
 - `--sample_rate`: Sample rate for audio processing.
 - `--target_length`: Target length of audio samples in seconds.
+- 
 - `--batch_size`: Batch size for training.
-- `--shuffle_train`: Enable shuffling of training data.
-- `--shuffle_val`: Enable shuffling of validation data.
-- `--shuffle_test`: Enable shuffling of test data.
 - `--num_workers`: Number of workers for data loading.
-- `--apply_transformations`: Apply mel spectrogram transformations.
 - `--apply_augmentations`: Apply pitch shift and time-stretch augmentations.
+
 - `--model_class_name`: Class name of the model to be used.
 - `--learning_rate`: Learning rate for training.
 - `--epochs`: Number of training epochs.

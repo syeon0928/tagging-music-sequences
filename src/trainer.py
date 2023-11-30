@@ -35,7 +35,7 @@ class Trainer:
         print("Training started")
         start_time = time.time()
 
-        ### BEGIN TRAINING LOOP
+        # BEGIN TRAINING LOOP
         # iterate over epochs
         for epoch in range(epochs):
             total_loss_train = 0
@@ -87,7 +87,7 @@ class Trainer:
                 self.best_val_loss = val_loss
                 self.best_model_state_dict = self.model.state_dict()
 
-        ### END OF TRAINING LOOP
+        # END OF TRAINING LOOP
 
         # Save final model
         self.save_model(save_directory, model_type="final")
@@ -98,7 +98,7 @@ class Trainer:
             self.save_model(save_directory, model_type="best")
 
         # Calculate and print total training elapsed time
-        total_elapsed_time = ( datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time) ).strftime("%H:%M:%S")
+        total_elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime("%H:%M:%S")
         print(f"Total training time: {total_elapsed_time:}")
 
         return None

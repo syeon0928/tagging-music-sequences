@@ -12,15 +12,13 @@ class AudioDS(Dataset):
             annotations_file,
             data_dir,
             target_sample_rate=16000,
-            target_length=30,
-            transformation=None,
+            target_length=29.1,
             augmentation=None,
     ):
         self.annotations_file = annotations_file
         self.data_dir = data_dir
         self.sample_rate = target_sample_rate
         self.target_length = target_length
-        self.transformation = transformation
         self.augmentation = augmentation
 
         # Load annotations using pandas
@@ -55,9 +53,6 @@ class AudioDS(Dataset):
                 signal = aug.apply(signal, sample_rate)
                 signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
 
-        if self.transformation:
-            signal = self.transformation(signal)
-
         return signal, label, audio_file
 
     # Get file path at a given index
@@ -82,18 +77,14 @@ def get_dataloader(
         num_workers,
         sample_rate,
         target_length,
-        transform_params=None,
         augmentation=None,
 ):
-    # Apply transformations if transform_params is provided
-    transformation = (audio_util.get_audio_transforms(**transform_params) if transform_params else None)
 
     dataset = AudioDS(
         annotations_file=annotations_file,
         data_dir=data_dir,
         target_sample_rate=sample_rate,
         target_length=target_length,
-        transformation=transformation,
         augmentation=augmentation,
     )
 
