@@ -27,8 +27,10 @@ class Trainer:
             "val_roc_auc": [],
             "val_pr_auc": [],
         }
+
         self.best_val_loss = float('inf')
         self.best_model_state_dict = None
+        self.best_history = {}
 
     def train(self, epochs, save_directory):
         self.model.train()
@@ -78,7 +80,8 @@ class Trainer:
             self.history["val_pr_auc"].append(val_pr_auc)
 
             # Print performance metrics
-            elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime("%H:%M:%S")
+            elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime(
+                "%H:%M:%S")
             print(f"Epoch {epoch + 1}/{epochs} completed in {elapsed_time}")
             print(f"Training Loss: {avg_loss_train}, Validation Loss: {val_loss}")
             print(f"Training ROC AUC: {train_roc_auc}, Validation ROC AUC: {val_roc_auc}")
@@ -89,6 +92,16 @@ class Trainer:
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
                 self.best_model_state_dict = self.model.state_dict()
+
+                # Update best history
+                self.best_history = {
+                    "train_loss": self.history["train_loss"].copy(),
+                    "train_roc_auc": self.history["train_roc_auc"].copy(),
+                    "train_pr_auc": self.history["train_pr_auc"].copy(),
+                    "val_loss": self.history["val_loss"].copy(),
+                    "val_roc_auc": self.history["val_roc_auc"].copy(),
+                    "val_pr_auc": self.history["val_pr_auc"].copy()
+                }
 
         # END OF TRAINING LOOP
 
@@ -101,7 +114,8 @@ class Trainer:
             self.save_model(save_directory, model_type="best")
 
         # Calculate and print total training elapsed time
-        total_elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime("%H:%M:%S")
+        total_elapsed_time = (datetime.datetime.min + datetime.timedelta(seconds=time.time() - start_time)).strftime(
+            "%H:%M:%S")
         print(f"Total training time: {total_elapsed_time:}")
 
         return None
@@ -137,7 +151,8 @@ class Trainer:
             return avg_loss, roc_auc, pr_auc
         return avg_loss, roc_auc, pr_auc, predicted_labels, true_labels, filepaths
 
-    # Implement function to retrieve metrics from predicted and true labels
+        # Implement function to retrieve metrics from predicted and true labels
+
     def get_auc(self, predicted_labels, true_labels):
         # Convert lists to numpy arrays
         predicted_labels = np.concatenate(predicted_labels)
@@ -159,17 +174,23 @@ class Trainer:
 
         if model_type == "best":
             filename = f"{model_name}_best_{timestamp}.pth"
+            checkpoint = {
+                "model_state_dict": self.best_model_state_dict,
+                "history": self.best_history,
+            }
         elif model_type == "final":
             filename = f"{model_name}_final_{timestamp}.pth"
+            checkpoint = {
+                "model_state_dict": self.model.state_dict(),
+                "history": self.history
+            }
         else:
             filename = f"{model_name}_{model_type}_{timestamp}.pth"
-
+            checkpoint = {
+                "model_state_dict": self.model.state_dict(),
+                "history": self.history
+            }
         path = os.path.join(directory, filename)
-
-        checkpoint = {
-            "model_state_dict": self.model.state_dict(),
-            "history": self.history,
-        }
         torch.save(checkpoint, path)
 
     def load_model(self, path):
