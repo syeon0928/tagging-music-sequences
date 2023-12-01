@@ -17,7 +17,7 @@ class Trainer:
         self.device = device
 
         self.criterion = nn.BCEWithLogitsLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
 
         self.history = {
             "train_loss": [],
