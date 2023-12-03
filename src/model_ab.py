@@ -1,78 +1,282 @@
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
+import torchaudio
 
 
-# Architecture similar to this paper:
-# Evaluation of CNN-based Automatic Music Tagging Models (arXiv:2006.00751)
-class FullyConvNet4(nn.Module):
-    def __init__(self, num_classes=50):
-        super(FullyConvNet4, self).__init__()
+class FCN3(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50
+                 ):
+        super(FCN3, self).__init__()
 
-        # Define convolutional layers
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=(3, 3), padding=1)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=(3, 3), padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=(3, 3), padding=1)
-        self.conv4 = nn.Conv2d(64, 128, kernel_size=(3, 3), padding=1)
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
 
-        # Define max-pooling layers with different strides
-        self.pool1 = nn.MaxPool2d((2, 4))
-        self.pool2 = nn.MaxPool2d((4, 5))
-        self.pool3 = nn.MaxPool2d((3, 8))
-        self.pool4 = nn.MaxPool2d((4, 8))
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
 
-        # The final convolutional layer to adjust the output to the desired number of classes
-        # Note: The number of output features needs to be tuned based on the final output size after the last pooling layer
-        self.final_conv = nn.Conv2d(128, num_classes, kernel_size=(1, 1))
+        # Layer 2
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((2, 4))
+
+        # Layer 3
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool2d((2, 4))
+
+        # Dense
+        self.dense = nn.Linear(64 * 12 * 28, num_classes) # Adjust the input size as needed
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = self.pool3(F.relu(self.conv3(x)))
-        x = self.pool4(F.relu(self.conv4(x)))
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
 
-        # Apply final convolution to get to the desired label shape (batch_size, 50, 1, 1)
-        x = self.final_conv(x)
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
 
-        # Flattening the output for the label shape: torch.Size([batch_size, 50])
-        x = torch.flatten(x, 1)
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
+        x = self.dense(x)
 
         return x
 
 
-# Based on: Evaluation of CNN-based Automatic Music Tagging Models (arXiv:2006.00751)
-class FullyConvNet5(nn.Module):
-    def __init__(self, num_classes=50):
-        super(FullyConvNet5, self).__init__()
+class FCN4(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50
+                 ):
+        super(FCN4, self).__init__()
 
-        # Define convolutional layers with the specified number of feature maps
-        self.conv1 = nn.Conv2d(1, 128, kernel_size=(3, 3), padding=1)
-        self.conv2 = nn.Conv2d(128, 256, kernel_size=(3, 3), padding=1)
-        self.conv3 = nn.Conv2d(256, 512, kernel_size=(3, 3), padding=1)
-        self.conv4 = nn.Conv2d(512, 1024, kernel_size=(3, 3), padding=1)
-        self.conv5 = nn.Conv2d(1024, 2048, kernel_size=(3, 3), padding=1)
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                         n_fft=n_fft,
+                                                         n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
 
-        # Define max-pooling layers with specified strides
-        self.pool1 = nn.MaxPool2d((2, 4))
-        self.pool2 = nn.MaxPool2d((2, 4))
-        self.pool3 = nn.MaxPool2d((2, 4))
-        self.pool4 = nn.MaxPool2d((3, 5))
-        self.pool5 = nn.MaxPool2d((4, 4))
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
 
-        # Final convolutional layer to adjust the output to num_classes dimensions
-        self.final_conv = nn.Conv2d(2048, num_classes, kernel_size=(1, 1))
+        # Layer 2
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((4, 5))
+
+        # Layer 3
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool2d((3, 8))
+
+        # Layer 4
+        self.conv4 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(64)
+        self.relu4 = nn.ReLU()
+        self.mp4 = nn.MaxPool2d((4, 8))
+
+        # Dense
+        self.dense = nn.Linear(64, num_classes)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = self.pool3(F.relu(self.conv3(x)))
-        x = self.pool4(F.relu(self.conv4(x)))
-        x = self.pool5(F.relu(self.conv5(x)))
+        # Spec transforms
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
 
-        # Apply final convolution to get to the desired label shape (batch_size, 50, 1, 1)
-        x = self.final_conv(x)
+        # Apply each layer in sequence
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
+        x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
 
-        # Flattening the output for the label shape: torch.Size([batch_size, 50])
-        x = torch.flatten(x, 1)
+        # Dense
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
+        x = self.dense(x)
 
         return x
+
+
+# Based on Choi et al. 2016: Automatic Tagging ...
+# https://doi.org/10.48550/arXiv.1606.00298
+# https://github.com/minzwon/sota-music-tagging-models
+class FCN5(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50
+                 ):
+        super(FCN5, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                         n_fft=n_fft,
+                                                         n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
+
+        # Layer 2
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((2, 4))
+
+        # Layer 3
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool2d((2, 4))
+
+        # Layer 4
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.relu4 = nn.ReLU()
+        self.mp4 = nn.MaxPool2d((3, 5))
+
+        # Layer 5
+        self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        self.bn5 = nn.BatchNorm2d(64)
+        self.relu5 = nn.ReLU()
+        self.mp5 = nn.MaxPool2d((4, 4))
+
+        # Dense
+        self.dense = nn.Linear(64, num_classes)
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        # Spec transforms
+        x = self.spec(x)
+        x = self.to_db(x)
+        # x = x.unsqueeze(1)
+        x = self.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
+        x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
+        x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+
+        # Dense
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
+        x = self.dense(x)
+
+        return x
+
+import torch.nn as nn
+import torchaudio
+
+class FCN7(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50
+                 ):
+        super(FCN7, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
+
+        # Layer 2
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((2, 4))
+
+        # Layer 3
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool2d((2, 4))
+
+        # Layer 4
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.relu4 = nn.ReLU()
+        self.mp4 = nn.MaxPool2d((3, 5))
+
+        # Layer 5
+        self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        self.bn5 = nn.BatchNorm2d(64)
+        self.relu5 = nn.ReLU()
+        self.mp5 = nn.MaxPool2d((4, 4))
+
+        # Additional 1x1 convolutional layers
+        self.conv6 = nn.Conv2d(64, 32, kernel_size=1)
+        self.bn6 = nn.BatchNorm2d(32)
+        self.relu6 = nn.ReLU()
+
+        self.conv7 = nn.Conv2d(32, 32, kernel_size=1)
+        self.bn7 = nn.BatchNorm2d(32)
+        self.relu7 = nn.ReLU()
+
+        # Dense
+        self.dense = nn.Linear(32, num_classes)
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        # Spec transforms
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
+        x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
+        x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+
+        # Apply additional 1x1 convolutional layers
+        x = self.relu6(self.bn6(self.conv6(x)))
+        x = self.relu7(self.bn7(self.conv7(x)))
+
+        # Dense
+        x = x.view(x.size(0), -1)
+        x = self.dropout(x)
+        x = self.dense(x)
+
+        return x
+
+# class MusicCNN(nn.Module):
+#     def __init__(self):
