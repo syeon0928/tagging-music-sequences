@@ -17,4 +17,4 @@ module load Anaconda3
 source activate aml-project
 
 # Run script
-python train.py --model_class_name "CRNN1" --shuffle_train --num_workers=16 --apply_transformations
+python train.py --model_class_name "WaveCNN7WithSelfAttention" --batch_size 16 --shuffle_train --num_workers=16 --apply_transformations
