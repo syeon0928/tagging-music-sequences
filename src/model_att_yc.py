@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SelfAttentionLayer(nn.Module):
-
     def __init__(self, in_dim, heads):
         super(SelfAttentionLayer, self).__init__()
         self.heads = heads
@@ -25,27 +24,42 @@ class SelfAttentionLayer(nn.Module):
         value_len, key_len, query_len = values.shape[1], keys.shape[1], query.shape[1]
 
         # Split the embedding into self.heads different pieces
-        values = values.reshape(N, value_len, self.heads, self.head_dim)
-        keys = keys.reshape(N, key_len, self.heads, self.head_dim)
-        queries = query.reshape(N, query_len, self.heads, self.head_dim)
+        values = values.reshape(N, -1, self.heads, self.head_dim)
+        keys = keys.reshape(N, -1, self.heads, self.head_dim)
+        queries = query.reshape(N, -1, self.heads, self.head_dim)
 
         values = self.values(values)
         keys = self.keys(keys)
         queries = self.queries(queries)
 
-        energy = torch.einsum("nqhd,nkhd->nhqk", [queries, keys])
+        # Transpose dimensions to match the einsum notation
+        #values = values.permute(0, 2, 3, 1)
+        #keys = keys.permute(0, 2, 3, 1)
+        #queries = queries.permute(0, 2, 3, 1)
+
+        # Perform the matrix multiplication
+        energy = torch.matmul(queries.transpose(2, 3), keys)
+        energy = energy.transpose(2, 3)
 
         if mask is not None:
             energy = energy.masked_fill(mask == 0, float("-1e20"))
 
         attention = torch.softmax(energy / (self.head_dim ** (1 / 2)), dim=3)
 
-        out = torch.einsum("nhql,nlhd->nqhd", [attention, values]).reshape(
-            N, query_len, self.heads * self.head_dim
-        )
+        # Transpose dimensions back to the original shape
+        #attention = attention.permute(0, 2, 3, 1)
+
+        # Perform the matrix multiplication
+        out = torch.matmul(attention.transpose(2, 3), values.transpose(2, 3))
+        out = out.transpose(2, 3)
+
+        # Reshape the output
+        out = out.reshape(N, -1)
 
         out = self.fc_out(out)
         return out
+
+
 
 class WaveCNN7WithSelfAttention(nn.Module):
 
