@@ -1,8 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name training
-#SBATCH --output=scripts/training-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --job-name att-wave
+#SBATCH --output=scripts/att-wave-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
-#SBATCH --cpus-per-task=16        
+#SBATCH --cpus-per-task=16
+#SBATCH --exclude=desktop[1-16,21,23-24]
 #SBATCH --mem=64G
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 1
