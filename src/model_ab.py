@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torchaudio
 
+from .modules import Conv_1d, Conv_2d, Conv_V, Conv_H
 
 class FCN3(nn.Module):
     def __init__(self,
@@ -194,9 +195,6 @@ class FCN5(nn.Module):
 
         return x
 
-import torch.nn as nn
-import torchaudio
-
 class FCN7(nn.Module):
     def __init__(self,
                  sample_rate=16000,
@@ -278,5 +276,77 @@ class FCN7(nn.Module):
 
         return x
 
-# class MusicCNN(nn.Module):
-#     def __init__(self):
+# Pons et al. 2017
+# End-to-end learning for music audio tagging at scale.
+# This is the updated implementation of the original paper. Referred to the Musicnn code.
+# https://github.com/jordipons/musicnn
+# https://github.com/minzwon/sota-music-tagging-models/blob/master/training/model.py
+class MusicCNN(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50
+                 ):
+        super(MusicCNN, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # frontend
+        # horizontal layers
+        m1 = Conv_V(1, 204, (int(0.7*96), 7))
+        m2 = Conv_V(1, 204, (int(0.4*96), 7))
+        # vertical layers
+        m3 = Conv_H(1, 51, 129)
+        m4 = Conv_H(1, 51, 65)
+        m5 = Conv_H(1, 51, 33)
+        self.layers = nn.ModuleList([m1, m2, m3, m4, m5])
+
+        # backend
+        backend_channel = 64
+        self.layer1 = Conv_1d(561, backend_channel, 7, 1, 1)
+        self.layer2 = Conv_1d(backend_channel, backend_channel, 7, 1, 1)
+        self.layer3 = Conv_1d(backend_channel, backend_channel, 7, 1, 1)
+
+        # dense
+        dense_channel = 200
+        self.dense1 = nn.Linear((561+(backend_channel*3))*2, dense_channel)
+        self.bn = nn.BatchNorm1d(dense_channel)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
+        self.dense2 = nn.Linear(dense_channel, num_classes)
+
+    def forward(self, x):
+        # Spectrogram
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+
+        # frontend
+        out = []
+        for layer in self.layers:
+            out.append(layer(x))
+        out = torch.cat(out, dim=1)
+
+        # Pons back-end
+        length = out.size(2)
+        res1 = self.layer1(out)
+        res2 = self.layer2(res1) + res1
+        res3 = self.layer3(res2) + res2
+        out = torch.cat([out, res1, res2, res3], 1)
+
+        mp = nn.MaxPool1d(length)(out)
+        avgp = nn.AvgPool1d(length)(out)
+
+        out = torch.cat([mp, avgp], dim=1)
+        out = out.squeeze(2)
+
+        out = self.relu(self.bn(self.dense1(out)))
+        out = self.dropout(out)
+        out = self.dense2(out)
+
+        return out
+
