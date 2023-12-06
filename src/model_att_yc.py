@@ -244,13 +244,14 @@ class FCN5WithSelfAttention(nn.Module):
         x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
         x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
-        x = self.attention1(x, x, x, mask=None)
         x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+        x = self.attention1(x, x, x, mask=None)
         x = self.attention2(x, x, x, mask=None)
 
         # Dense
         x = x.view(x.size(0), -1)
         x = self.dropout(x)
         x = self.dense(x)
+        print("training going")
 
         return x
