@@ -33,6 +33,8 @@ class WaveCNN9(nn.Module):
         self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
 
+        self.dropout = nn.Dropout(0.5)
+
     def forward(self, x):
         # Convolutional blocks
         for block in self.conv_blocks:
@@ -44,6 +46,7 @@ class WaveCNN9(nn.Module):
 
         # Fully connected layers
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = self.fc2(x)
 
         return x
@@ -76,6 +79,8 @@ class WaveCNN7(nn.Module):
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
         self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
+        self.dropout = nn.Dropout(0.5)
+
 
     def forward(self, x):
         # Convolutional blocks
@@ -88,6 +93,7 @@ class WaveCNN7(nn.Module):
 
         # Fully connected layers
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = self.fc2(x)
 
         return x
@@ -120,6 +126,8 @@ class WaveCNN5(nn.Module):
         # Adjust the input size of the first FC layer based on the output of the last convolutional block
         self.fc1 = nn.Linear(512, 256)  # Adjust 128 based on the output channels of the last conv block
         self.fc2 = nn.Linear(256, num_classes)
+        self.dropout = nn.Dropout(0.5)
+
 
     def forward(self, x):
         # Convolutional blocks
@@ -132,6 +140,7 @@ class WaveCNN5(nn.Module):
 
         # Fully connected layers
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = self.fc2(x)
 
         return x
