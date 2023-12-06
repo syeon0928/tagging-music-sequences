@@ -198,14 +198,12 @@ class FCN5WithSelfAttention(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu1 = nn.ReLU()
         self.mp1 = nn.MaxPool2d((2, 4))
-        self.attention1 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
 
         # Layer 2
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
         self.bn2 = nn.BatchNorm2d(128)
         self.relu2 = nn.ReLU()
         self.mp2 = nn.MaxPool2d((2, 4))
-        self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
 
         # Layer 3
         self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
@@ -219,11 +217,16 @@ class FCN5WithSelfAttention(nn.Module):
         self.relu4 = nn.ReLU()
         self.mp4 = nn.MaxPool2d((3, 5))
 
+
         # Layer 5
         self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
         self.bn5 = nn.BatchNorm2d(64)
         self.relu5 = nn.ReLU()
         self.mp5 = nn.MaxPool2d((4, 4))
+
+        #attention
+        self.attention1 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
+        self.attention2 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
 
         # Dense
         self.dense = nn.Linear(64, num_classes)
@@ -233,16 +236,17 @@ class FCN5WithSelfAttention(nn.Module):
         # Spec transforms
         x = self.spec(x)
         x = self.to_db(x)
+        # x = x.unsqueeze(1)
         x = self.spec_bn(x)
 
         # Apply each layer in sequence
         x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
-        x = self.attention1(x, x, x, mask=None)
         x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
-        x = self.attention2(x, x, x, mask=None)
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
         x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
+        x = self.attention1(x, x, x, mask=None)
         x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+        x = self.attention2(x, x, x, mask=None)
 
         # Dense
         x = x.view(x.size(0), -1)
