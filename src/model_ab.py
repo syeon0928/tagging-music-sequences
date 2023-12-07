@@ -356,7 +356,7 @@ class FCN7_Transfer(nn.Module):
         super(FCN7_Transfer, self).__init__()
 
         # Initialize the original FCN7 model
-        self.original_fcn7 = FCN7(num_classes=50)  # Assuming 50 was the original number of classes
+        self.original_fcn7 = FCN7(num_classes=50)
 
         # Load the pre-trained weights
         self.load_pretrained_weights(pre_trained_model_path)
@@ -368,7 +368,7 @@ class FCN7_Transfer(nn.Module):
         # Replace the last dense layer with new layers for the new task
         # Assume the new task has 'num_classes_new_task' classes
         self.new_layers = nn.Sequential(
-            nn.Linear(32, 128),
+            nn.Linear(512, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(128, num_classes_new_task)
