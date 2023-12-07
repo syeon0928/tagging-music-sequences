@@ -350,3 +350,39 @@ class MusicCNN(nn.Module):
 
         return out
 
+
+class FCN7_Transfer(nn.Module):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path='../models/FCN7_best_l2_20231201-2215.pth'):
+        super(FCN7_Transfer, self).__init__()
+
+        # Initialize the original FCN7 model
+        self.original_fcn7 = FCN7(num_classes=50)  # Assuming 50 was the original number of classes
+
+        # Load the pre-trained weights
+        self.load_pretrained_weights(pre_trained_model_path)
+
+        # Freeze the parameters of the original model
+        for param in self.original_fcn7.parameters():
+            param.requires_grad = False
+
+        # Replace the last dense layer with new layers for the new task
+        # Assume the new task has 'num_classes_new_task' classes
+        self.new_layers = nn.Sequential(
+            nn.Linear(32, 128),  # Adjust the input features to match the output of the last frozen layer
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, num_classes_new_task)
+        )
+
+    def load_pretrained_weights(self, path):
+        checkpoint = torch.load(path)
+        self.original_fcn7.load_state_dict(checkpoint['model_state_dict'])
+
+    def forward(self, x):
+        # Pass input through the original model
+        x = self.original_fcn7(x)
+
+        # Pass through new layers
+        x = self.new_layers(x)
+
+        return x
