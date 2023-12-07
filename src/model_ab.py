@@ -352,7 +352,7 @@ class MusicCNN(nn.Module):
 
 
 class FCN7_Transfer(nn.Module):
-    def __init__(self, num_classes_new_task=10, pre_trained_model_path='../models/FCN7_best_l2_20231201-2215.pth'):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
         super(FCN7_Transfer, self).__init__()
 
         # Initialize the original FCN7 model
@@ -387,15 +387,15 @@ class FCN7_Transfer(nn.Module):
         x = self.original_fcn7.spec_bn(x)
 
         # Apply each layer in sequence
-        x = self.original_fcn7.mp1(self.relu1(self.bn1(self.conv1(x))))
-        x = self.original_fcn7.mp2(self.relu2(self.bn2(self.conv2(x))))
-        x = self.original_fcn7.mp3(self.relu3(self.bn3(self.conv3(x))))
-        x = self.original_fcn7.mp4(self.relu4(self.bn4(self.conv4(x))))
-        x = self.original_fcn7.mp5(self.relu5(self.bn5(self.conv5(x))))
+        x = self.original_fcn7.mp1(self.original_fcn7.relu1(self.original_fcn7.bn1(self.original_fcn7.conv1(x))))
+        x = self.original_fcn7.mp2(self.original_fcn7.relu2(self.original_fcn7.bn2(self.original_fcn7.conv2(x))))
+        x = self.original_fcn7.mp3(self.original_fcn7.relu3(self.original_fcn7.bn3(self.original_fcn7.conv3(x))))
+        x = self.original_fcn7.mp4(self.original_fcn7.relu4(self.original_fcn7.bn4(self.original_fcn7.conv4(x))))
+        x = self.original_fcn7.mp5(self.original_fcn7.relu5(self.original_fcn7.bn5(self.original_fcn7.conv5(x))))
 
         # Apply additional 1x1 convolutional layers
-        x = self.original_fcn7.relu6(self.bn6(self.conv6(x)))
-        x = self.original_fcn7.relu7(self.bn7(self.conv7(x)))
+        x = self.original_fcn7.relu6(self.original_fcn7.bn6(self.original_fcn7.conv6(x)))
+        x = self.original_fcn7.relu7(self.original_fcn7.bn7(self.original_fcn7.conv7(x)))
 
         # Pass through new layers
         x = self.original_fcn7.new_layers(x)
