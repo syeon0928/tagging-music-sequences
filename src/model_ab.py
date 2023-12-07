@@ -352,7 +352,7 @@ class MusicCNN(nn.Module):
 
 
 class FCN7_Transfer(nn.Module):
-    def __init__(self, num_classes_new_task=10, pre_trained_model_path='../models/FCN7_best_l2_20231201-2215.pth'):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
         super(FCN7_Transfer, self).__init__()
 
         # Initialize the original FCN7 model
