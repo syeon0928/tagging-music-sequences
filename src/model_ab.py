@@ -368,7 +368,7 @@ class FCN7_Transfer(nn.Module):
         # Replace the last dense layer with new layers for the new task
         # Assume the new task has 'num_classes_new_task' classes
         self.new_layers = nn.Sequential(
-            nn.Linear(32, 128),  # Adjust the input features to match the output of the last frozen layer
+            nn.Linear(32, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(128, num_classes_new_task)
@@ -380,9 +380,24 @@ class FCN7_Transfer(nn.Module):
 
     def forward(self, x):
         # Pass input through the original model
-        x = self.original_fcn7(x)
+
+        # Spec transforms
+        x = self.original_fcn7.spec(x)
+        x = self.original_fcn7.to_db(x)
+        x = self.original_fcn7.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.original_fcn7.mp1(self.relu1(self.bn1(self.conv1(x))))
+        x = self.original_fcn7.mp2(self.relu2(self.bn2(self.conv2(x))))
+        x = self.original_fcn7.mp3(self.relu3(self.bn3(self.conv3(x))))
+        x = self.original_fcn7.mp4(self.relu4(self.bn4(self.conv4(x))))
+        x = self.original_fcn7.mp5(self.relu5(self.bn5(self.conv5(x))))
+
+        # Apply additional 1x1 convolutional layers
+        x = self.original_fcn7.relu6(self.bn6(self.conv6(x)))
+        x = self.original_fcn7.relu7(self.bn7(self.conv7(x)))
 
         # Pass through new layers
-        x = self.new_layers(x)
+        x = self.original_fcn7.new_layers(x)
 
         return x
