@@ -396,7 +396,7 @@ class FCN7_Transfer(nn.Module):
         # Apply additional 1x1 convolutional layers
         x = self.original_fcn7.relu6(self.original_fcn7.bn6(self.original_fcn7.conv6(x)))
         x = self.original_fcn7.relu7(self.original_fcn7.bn7(self.original_fcn7.conv7(x)))
-        x = x.view(x.sizze(0), -1)
+        x = x.view(x.size(0), -1)
         # Pass through new layers
         x = self.new_layers(x)
 
