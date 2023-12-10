@@ -368,7 +368,9 @@ class FCN7_Transfer(nn.Module):
         # Replace the last dense layer with new layers for the new task
         # Assume the new task has 'num_classes_new_task' classes
         self.new_layers = nn.Sequential(
-            nn.Linear(32, 128),
+            nn.Linear(32, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(128, num_classes_new_task)
