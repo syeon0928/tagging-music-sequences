@@ -368,7 +368,7 @@ class FCN7_Transfer(nn.Module):
         # Replace the last dense layer with new layers for the new task
         # Assume the new task has 'num_classes_new_task' classes
         self.new_layers = nn.Sequential(
-            nn.Linear(512, 128),
+            nn.Linear(32, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(128, num_classes_new_task)
@@ -396,7 +396,10 @@ class FCN7_Transfer(nn.Module):
         # Apply additional 1x1 convolutional layers
         x = self.original_fcn7.relu6(self.original_fcn7.bn6(self.original_fcn7.conv6(x)))
         x = self.original_fcn7.relu7(self.original_fcn7.bn7(self.original_fcn7.conv7(x)))
+        
+        #Flatten the output to [batch_size, 32]
         x = x.view(x.size(0), -1)
+
         # Pass through new layers
         x = self.new_layers(x)
 
