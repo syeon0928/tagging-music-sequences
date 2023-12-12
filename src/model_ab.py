@@ -366,7 +366,7 @@ class FCN7_Transfer(nn.Module):
             param.requires_grad = False
         
         # Unfreeze the top Cov layers
-        for layer in [self.original_fcn7.cov7, self.original_fcn7.conv7, self.original_fcn7.bn6, self.original_fcn7.bn7]:
+        for layer in [self.original_fcn7.conv6, self.original_fcn7.conv7, self.original_fcn7.bn6, self.original_fcn7.bn7]:
             for param in layer.parameters():
                 param.requires_grad = True
 
