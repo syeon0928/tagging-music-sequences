@@ -184,8 +184,9 @@ class BertEncoder(nn.Module):
         super(BertEncoder, self).__init__()
         layer = BertLayer(config)
         self.layer = nn.ModuleList([copy.deepcopy(layer) for _ in range(config.num_hidden_layers)])
-
+        self.classier=nn.Linear(768,50)
     def forward(self, hidden_states, attention_mask=None, output_all_encoded_layers=True):
+        batch_size=hidden_states.size()[0]
         all_encoder_layers = []
         for layer_module in self.layer:
             hidden_states = layer_module(hidden_states, attention_mask)
@@ -193,7 +194,8 @@ class BertEncoder(nn.Module):
                 all_encoder_layers.append(hidden_states)
         if not output_all_encoded_layers:
             all_encoder_layers.append(hidden_states)
-        return all_encoder_layers
+        classier_head_output=self.classier(hidden_states)
+        return all_encoder_layers,hidden_states,classier_head_output.view(batch_size,-1)
 
 
 class BertEmbeddings(nn.Module):

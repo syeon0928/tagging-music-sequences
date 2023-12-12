@@ -1,15 +1,16 @@
 import argparse
 import random
+
 import torch
 
 import src.models as models
-from src.model_bert_yc import *
 from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 from src.audio_dataset import get_dataloader
-from src.trainer import Trainer
+from src.trainer_yc import Trainer
 
 
 def main(config):
+
     if config.apply_augmentations:
         augmentations = []
         pitch_shift_steps = random.randint(-4, 4)
@@ -42,30 +43,18 @@ def main(config):
         target_length=config.target_length,
     )
 
-    # Initialize the front-end model
-    front_end_model_class = getattr(models, config.front_end)
-    front_end_model = front_end_model_class(
-        sample_rate=config.sample_rate,
-        n_fft=512,  # Add any other necessary parameters
-        n_mels=96
-    )
-
-    # Initialize the back-end model
-    back_end_model_class = getattr(models, config.back_end)
-    back_end_model = back_end_model_class(attention_config)
-
-    # Combine the front-end and back-end models
-    complete_model = FrontEndBackEndModel(front_end_model, back_end_model)
-
-    # Move the complete model to the device
+    # Initialize the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    complete_model = complete_model.to(device)
+    model_class = getattr(models, config.model_class_name)
+
+    model = model_class(config).to(device)
 
     # Initialize the Trainer
-    trainer = Trainer(complete_model, train_loader, val_loader, config.learning_rate, device)
+    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Audio Tagging Training Script")
@@ -76,17 +65,27 @@ if __name__ == "__main__":
     parser.add_argument("--val_annotations", type=str, default="mtat_val_label.csv")
     parser.add_argument("--test_annotations", type=str, default="mtat_test_label.csv")
 
-    parser.add_argument("--sample_rate", type=int, default=16000)
-    parser.add_argument("--target_length", type=float, default=29.1)
+    parser.add_argument("--sample_rate", type=int, default=16)
+    parser.add_argument("--target_length", type=float, default=48)
 
-    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--apply_augmentations", action="store_true")
 
-    parser.add_argument("--model_class_name", type=str, default="FCN5")
+    parser.add_argument("--model_class_name", type=str, default="BertEncoder")
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--model_path", type=str, default="models")
+    #BERTConfig
+    parser.add_argument("--hidden_size",default= 768)
+    parser.add_argument("--num_hidden_layers", default=12)
+    parser.add_argument("--num_attention_heads", default=12)
+    parser.add_argument("--intermediate_size", default=3072)
+    parser.add_argument("--hidden_act", default="gelu")
+    parser.add_argument("--max_position_embeddings", default=512)
+    parser.add_argument("--attention_probs_dropout_prob",default= 0.1)
+    parser.add_argument("--hidden_dropout_prob",default= 0.1)
+    parser.add_argument("--type_vocab_size", default=2)
 
     parser.add_argument('--front_end', type=str, default='FCN5FE', help='Front-end model class name')
     parser.add_argument('--back_end', type=str, default='AttentionModule', help='Back-end model class name')

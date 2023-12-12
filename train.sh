@@ -9,11 +9,11 @@
 #SBATCH --time 24:00:00
 #SBATCH --partition brown                   
 #SBATCH --mail-type=BEGIN,END,FAIL               # When to send email
-#SBATCH --mail-user=abys@itu.dk           # Email to which to send updates
+#SBATCH --mail-user=seuh@itu.dk           # Email to which to send updates
 
 # Activate environment
 module load Anaconda3
 source activate aml-project
 
 # Run script
-python train.py --model_class_name="FCN5" --num_workers=16
+python train.py --model_class_name="FCN7_Transfer" --num_workers=16 --train_annotations='gtzan_train_label.csv' --val_annotations='gtzan_val_label.csv' --test_annotations='gtzan_test_label.csv'

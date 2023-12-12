@@ -9,14 +9,13 @@ from sklearn import metrics
 
 
 class Trainer:
-    def __init__(self, model, train_loader, valid_loader, learning_rate, transfer = False, device="cuda"):
+    def __init__(self, model, train_loader, valid_loader, learning_rate, device="cuda"):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.learning_rate = learning_rate
         self.device = device
-        if transfer:
-            self.criterion = nn.CrossEntropyLoss()
+
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
 
@@ -51,7 +50,7 @@ class Trainer:
 
                 # train
                 self.optimizer.zero_grad()
-                outputs = self.model(batch)
+                _,_,outputs = self.model(batch)
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
