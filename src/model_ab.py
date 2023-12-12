@@ -364,6 +364,11 @@ class FCN7_Transfer(nn.Module):
         # Freeze the parameters of the original model
         for param in self.original_fcn7.parameters():
             param.requires_grad = False
+        
+        # Unfreeze the top Cov layers
+        for layer in [self.original_fcn7.cov7, self.original_fcn7.conv7, self.original_fcn7.bn6, self.original_fcn7.bn7]:
+            for param in layer.parameters():
+                param.requires_grad = True
 
         # Replace the last dense layer with new layers for the new task
         # Assume the new task has 'num_classes_new_task' classes
