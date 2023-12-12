@@ -1,7 +1,7 @@
 import importlib
 
 # List of model module names (without .py extension)
-model_modules = ['model_ab', 'model_sy', 'model_yc', 'model_att_yc']
+model_modules = ['model_ab', 'model_sy', 'model_yc', 'model_att_yc', 'model_bert_yc']
 
 # Dynamically import all models
 for module_name in model_modules:
