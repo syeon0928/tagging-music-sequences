@@ -50,7 +50,8 @@ class Trainer:
 
                 # train
                 self.optimizer.zero_grad()
-                _,_,outputs = self.model(batch)
+                #_,_,
+                outputs = self.model(batch)
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
