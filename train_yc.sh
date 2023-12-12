@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name att-wave
+#SBATCH --job-name bert
 #SBATCH --output=scripts/att-wave-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16
@@ -18,4 +18,4 @@
 source activate aml-project
 
 # Run script
-python train.py --model_class_name "SpecCNN7WithSelfAttention" --batch_size 16
+python train_yc.py --front_end "FCN5FE" --back_end "AttentionModule" --batch_size 16
