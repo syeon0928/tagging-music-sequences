@@ -18,4 +18,4 @@
 source activate aml-project
 
 # Run script
-python train_yc.py --front_end "FCN5FE" --back_end "AttentionModule" --batch_size 16
+python train_yc.py --front_end "FCN7FE" --back_end "AttentionModule" --batch_size 16

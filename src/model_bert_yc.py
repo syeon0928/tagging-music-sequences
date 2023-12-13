@@ -260,14 +260,14 @@ class BertPooler(nn.Module):
         return pooled_output
 
 
-class FCN5FE(nn.Module):
+class FCN7FE(nn.Module):
     def __init__(self,
                  sample_rate=16000,
                  n_fft=512,
                  n_mels=96,
                  attention_channels = 512
                  ):
-        super(FCN5FE, self).__init__()
+        super(FCN7FE, self).__init__()
 
         # Transform signal to mel spectrogram
         self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
@@ -307,8 +307,17 @@ class FCN5FE(nn.Module):
         self.relu5 = nn.ReLU()
         self.mp5 = nn.MaxPool2d((4, 4))
 
+        # Additional 1x1 convolutional layers
+        self.conv6 = nn.Conv2d(64, 32, kernel_size=1)
+        self.bn6 = nn.BatchNorm2d(32)
+        self.relu6 = nn.ReLU()
+
+        self.conv7 = nn.Conv2d(32, 32, kernel_size=1)
+        self.bn7 = nn.BatchNorm2d(32)
+        self.relu7 = nn.ReLU()
+
         # Dense
-        self.dense = nn.Linear(64, attention_channels)
+        self.dense = nn.Linear(32, attention_channels)
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
@@ -324,6 +333,10 @@ class FCN5FE(nn.Module):
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
         x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
         x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+
+        # Apply additional 1x1 convolutional layers
+        x = self.relu6(self.bn6(self.conv6(x)))
+        x = self.relu7(self.bn7(self.conv7(x)))
 
         # Dense
         x = x.view(x.size(0), -1)
@@ -411,14 +424,24 @@ class FrontEndBackEndModel(nn.Module):
     def __init__(self, front_end, back_end):
         super(FrontEndBackEndModel, self).__init__()
         self.front_end = front_end
-        self.back_end = back_end(attention_config)
+        self.back_end = back_end
+
+    def load_pretrained_parameters(self, front_end_pretrained_path='models/FCN7_best_l2_20231201-2215.pth', freeze_layers=5):
+        # Load pre-trained parameters for the front-end model
+        pretrained_state_dict = torch.load(front_end_pretrained_path)
+
+        # Load pre-trained parameters, skipping unnecessary keys
+        self.front_end.load_state_dict(
+            {k: v for k, v in pretrained_state_dict.items() if k in self.front_end.state_dict()})
+
+        # Freeze layers in the front-end model up to the specified layer
+        for i, param in enumerate(self.front_end.parameters()):
+            if i < freeze_layers:
+                param.requires_grad = False
 
     def forward(self, x):
         # Front-end
         front_end_output = self.front_end(x)
-
-        # Permute if needed
-        # ...
 
         # Back-end
         back_end_output = self.back_end(front_end_output)
@@ -438,13 +461,5 @@ class Config(object):
         self.attention_length = attention_length
         self.attention_dropout = attention_dropout
 
-attention_config = Config(
-    attention_channels=512,
-    attention_layers=2,
-    attention_heads=8,
-    attention_length=257,
-    attention_dropout=0.1)
 
-fcn5_front_end = FCN5FE()
-wave_cnn7_front_end = WaveCNN7FE()
-attention_back_end = AttentionModule(attention_config)
+

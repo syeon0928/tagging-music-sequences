@@ -47,7 +47,12 @@ def main(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_class = getattr(models, config.model_class_name)
 
-    model = model_class(config).to(device)
+    front_end_model = getattr(models, config.front_end)(
+        sample_rate=config.sample_rate, n_fft=config.n_fft, n_mels=config.n_mels, attention_channels=config.attention_channels)
+    back_end_model = getattr(models, config.back_end)(
+        config)
+
+    model = model_class(front_end_model, back_end_model).to(device)
 
     # Initialize the Trainer
     trainer = Trainer(model, train_loader, val_loader, config.learning_rate, device)
@@ -65,18 +70,26 @@ if __name__ == "__main__":
     parser.add_argument("--val_annotations", type=str, default="mtat_val_label.csv")
     parser.add_argument("--test_annotations", type=str, default="mtat_test_label.csv")
 
-    parser.add_argument("--sample_rate", type=int, default=16)
-    parser.add_argument("--target_length", type=float, default=48)
+    parser.add_argument("--sample_rate", type=int, default=16000)
+    parser.add_argument("--target_length", type=float, default=29.1)
+    parser.add_argument("--n_fft", type=int, default=512)
+    parser.add_argument("--n_mels", type=int, default=96)
 
-    parser.add_argument("--batch_size", type=int, default=2)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--apply_augmentations", action="store_true")
 
-    parser.add_argument("--model_class_name", type=str, default="BertEncoder")
+    parser.add_argument("--model_class_name", type=str, default="FrontEndBackEndModel")
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--model_path", type=str, default="models")
     #BERTConfig
+    parser.add_argument("--attention_channels", default=512)
+    parser.add_argument("--attention_layers", default=2)
+    parser.add_argument("--attention_heads", default=8)
+    parser.add_argument("--attention_length", default=257)
+    parser.add_argument("--attention_dropout", default=0.1)
+
     parser.add_argument("--hidden_size",default= 768)
     parser.add_argument("--num_hidden_layers", default=12)
     parser.add_argument("--num_attention_heads", default=12)
