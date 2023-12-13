@@ -17,47 +17,44 @@ class SelfAttentionLayer(nn.Module):
         self.keys = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.queries = nn.Linear(self.head_dim, self.head_dim, bias=False)
         self.fc_out = nn.Linear(heads * self.head_dim, in_dim)
+        self.attention = nn.MultiheadAttention(self.head_dim, self.heads)
 
-    def forward(self, values, keys, query, mask):
+    def forward(self, x):
         # Get number of training examples
-        N = query.shape[0]
-
-        value_len, key_len, query_len = values.shape[1], keys.shape[1], query.shape[1]
+        N = x.shape[0]
 
         # Split the embedding into self.heads different pieces
-        values = values.reshape(N, -1, self.heads, self.head_dim)
-        keys = keys.reshape(N, -1, self.heads, self.head_dim)
-        queries = query.reshape(N, -1, self.heads, self.head_dim)
+        x_reshape = x.reshape(N, -1, self.heads, self.head_dim)
 
-        values = self.values(values)
-        keys = self.keys(keys)
-        queries = self.queries(queries)
+        values = self.values(x_reshape)
+        keys = self.keys(x_reshape)
+        queries = self.queries(x_reshape)
+
+        out = self.attention(queries, keys, values)
 
         # Transpose dimensions to match the einsum notation
         #values = values.permute(0, 2, 3, 1)
         #keys = keys.permute(0, 2, 3, 1)
         #queries = queries.permute(0, 2, 3, 1)
 
+
         # Perform the matrix multiplication
-        energy = torch.matmul(queries.transpose(2, 3), keys)
-        energy = energy.transpose(2, 3)
+        #energy = torch.matmul(queries.transpose(2, 3), keys)
+        #energy = energy.transpose(2, 3)
 
-        if mask is not None:
-            energy = energy.masked_fill(mask == 0, float("-1e20"))
-
-        attention = torch.softmax(energy / (self.head_dim ** (1 / 2)), dim=3)
+        #attention = torch.softmax(energy / (self.head_dim ** (1 / 2)), dim=3)
 
         # Transpose dimensions back to the original shape
         #attention = attention.permute(0, 2, 3, 1)
 
         # Perform the matrix multiplication
-        out = torch.matmul(attention.transpose(2, 3), values.transpose(2, 3))
-        out = out.transpose(2, 3)
+        #out = torch.matmul(attention.transpose(2, 3), values.transpose(2, 3))
+        #out = out.transpose(2, 3)
 
         # Reshape the output
-        out = out.reshape(N, -1)
+        #out = out.reshape(N, -1)
 
-        out = self.fc_out(out)
+        #out = self.fc_out(out)
         return out
 
 
@@ -176,7 +173,7 @@ class SpecCNN7WithSelfAttention(nn.Module):
 
         return x
 
-class FCN5WithSelfAttention(nn.Module):
+class FCN7WithSelfAttention(nn.Module):
     def __init__(self,
                  sample_rate=16000,
                  n_fft=512,
@@ -184,7 +181,7 @@ class FCN5WithSelfAttention(nn.Module):
                  num_classes=50,
                  attention_heads=2
                  ):
-        super(FCN5WithSelfAttention, self).__init__()
+        super(FCN7WithSelfAttention, self).__init__()
 
         # Transform signal to mel spectrogram
         self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
@@ -224,9 +221,19 @@ class FCN5WithSelfAttention(nn.Module):
         self.relu5 = nn.ReLU()
         self.mp5 = nn.MaxPool2d((4, 4))
 
+        # Additional 1x1 convolutional layers
+        self.conv6 = nn.Conv2d(64, 32, kernel_size=1)
+        self.bn6 = nn.BatchNorm2d(32)
+        self.relu6 = nn.ReLU()
+
+        self.conv7 = nn.Conv2d(32, 32, kernel_size=1)
+        self.bn7 = nn.BatchNorm2d(32)
+        self.relu7 = nn.ReLU()
+
         #attention
         self.attention1 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
         self.attention2 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
+       #self.attention1 = nn.MultiheadAttention(in_dim=64, heads=attention_heads)
 
         # Dense
         self.dense = nn.Linear(64, num_classes)
@@ -234,7 +241,9 @@ class FCN5WithSelfAttention(nn.Module):
 
     def forward(self, x):
         # Spec transforms
+        # x = [batch, kernel, width, height]
         x = self.spec(x)
+        # x = [batch,
         x = self.to_db(x)
         # x = x.unsqueeze(1)
         x = self.spec_bn(x)
@@ -245,8 +254,8 @@ class FCN5WithSelfAttention(nn.Module):
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
         x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
         x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
-        x = self.attention1(x, x, x, mask=None)
-        x = self.attention2(x, x, x, mask=None)
+        x = self.attention1(x)
+        x = self.attention2(x)
 
         # Dense
         x = x.view(x.size(0), -1)
