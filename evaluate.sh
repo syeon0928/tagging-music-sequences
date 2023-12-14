@@ -15,17 +15,10 @@
 module load Anaconda3
 source activate aml-project
 
+# Set params
+MODEL_PATH="models/FCN7_Transfer_unfreezed_best.pth"
+MODEL_CLASS_NAME="FCN7TransferUnfreezed"
+
 # Run script
-for MODEL_PATH in models/*best*.pth; do
-    # Extract the model class name from the filename
-    FILENAME=$(basename "$MODEL_PATH")
-    MODEL_CLASS_NAME=$(echo $FILENAME | grep -o -E 'WaveCNN[0-9]+|FCN[0-9]+|MusicCNN')
+python evaluate.py --model_path "$MODEL_PATH" --model_class_name "$MODEL_CLASS_NAME"
 
-    if [ -z "$MODEL_CLASS_NAME" ]; then
-        echo "Could not determine model class for $MODEL_PATH. Skipping."
-        continue
-    fi
-
-    echo "Evaluating model: $MODEL_PATH using class $MODEL_CLASS_NAME"
-    python evaluate.py --model_path "$MODEL_PATH" --model_class_name "$MODEL_CLASS_NAME"
-done
