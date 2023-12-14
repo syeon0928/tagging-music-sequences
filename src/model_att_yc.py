@@ -19,6 +19,7 @@ class SelfAttentionLayer(nn.Module):
         # x is [batch_size, num_channels, height, width]
         # 16, 128, 12, 28
         batch_size, num_channels, height, width = x.shape
+        print(x.shape)
 
         # Reshape the input to (height * width, batch_size, num_channels)
         x_reshape = x.permute(2, 3, 0, 1).contiguous().view(height * width, batch_size, num_channels)
@@ -32,7 +33,7 @@ class SelfAttentionLayer(nn.Module):
         return out
 
 
-class FCN5WithSelfAttention(nn.Module):
+class FCN3WithSelfAttention(nn.Module):
     def __init__(self,
                  sample_rate=16000,
                  n_fft=512,
@@ -40,7 +41,7 @@ class FCN5WithSelfAttention(nn.Module):
                  num_classes=50,
                  attention_heads=2
                  ):
-        super(FCN5WithSelfAttention, self).__init__()
+        super(FCN3WithSelfAttention, self).__init__()
 
         # Transform signal to mel spectrogram
         self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
@@ -83,11 +84,7 @@ class FCN5WithSelfAttention(nn.Module):
         #attention
         self.attention1 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
         self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
-       #self.attention1 = nn.MultiheadAttention(in_dim=64, heads=attention_heads)
 
-        # Dense
-        #self.dense = nn.Linear(64, num_classes)
-        #self.dropout = nn.Dropout(0.5)
         # Flatten and Dense
         self.flatten = nn.Flatten()
         self.dense = nn.Linear(43008, num_classes)  # Adjust input size based on your actual needs
@@ -97,7 +94,6 @@ class FCN5WithSelfAttention(nn.Module):
         # Spec transforms
         # x = [batch, kernel, width, height]
         x = self.spec(x)
-        # x = [batch,
         x = self.to_db(x)
         # x = x.unsqueeze(1)
         x = self.spec_bn(x)
@@ -108,6 +104,184 @@ class FCN5WithSelfAttention(nn.Module):
         x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
         #print(x.shape)
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
+        #print(x.shape)
+        #x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
+        #print(x.shape)
+        #x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+        #print(x.shape)
+
+        x = self.attention1(x)
+        x = self.attention2(x)
+
+        # Flatten
+        x = self.flatten(x)
+
+        # Dense
+        x = self.dropout(x)
+        x = self.dense(x)
+
+        return x
+
+class FCN4WithSelfAttention(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50,
+                 attention_heads=2
+                 ):
+        super(FCN4WithSelfAttention, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                         n_fft=n_fft,
+                                                         n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
+
+        # Layer 2
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((2, 4))
+
+        # Layer 3
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.relu3 = nn.ReLU()
+        self.mp3 = nn.MaxPool2d((2, 4))
+
+        # Layer 4
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(128)
+        self.relu4 = nn.ReLU()
+        self.mp4 = nn.MaxPool2d((3, 5))
+
+
+        # Layer 5
+        #self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        #self.bn5 = nn.BatchNorm2d(64)
+        #self.relu5 = nn.ReLU()
+        #self.mp5 = nn.MaxPool2d((4, 4))
+
+        #attention
+        self.attention1 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
+        self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
+
+        # Flatten and Dense
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear(2560, num_classes)  # Adjust input size based on your actual needs
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        # Spec transforms
+        # x = [batch, kernel, width, height]
+        x = self.spec(x)
+        x = self.to_db(x)
+        # x = x.unsqueeze(1)
+        x = self.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        #print(x.shape)
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        #print(x.shape)
+        x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
+        #print(x.shape)
+        x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
+        #print(x.shape)
+        #x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
+        #print(x.shape)
+
+        x = self.attention1(x)
+        x = self.attention2(x)
+
+        # Flatten
+        x = self.flatten(x)
+
+        # Dense
+        x = self.dropout(x)
+        x = self.dense(x)
+
+        return x
+
+class FCN2WithSelfAttention(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50,
+                 attention_heads=2
+                 ):
+        super(FCN2WithSelfAttention, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
+                                                         n_fft=n_fft,
+                                                         n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU()
+        self.mp1 = nn.MaxPool2d((2, 4))
+
+        # Layer 2
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU()
+        self.mp2 = nn.MaxPool2d((2, 4))
+
+        # Layer 3
+        #self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        #self.bn3 = nn.BatchNorm2d(128)
+        #self.relu3 = nn.ReLU()
+        #self.mp3 = nn.MaxPool2d((2, 4))
+
+        # Layer 4
+        #self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        #self.bn4 = nn.BatchNorm2d(128)
+        #self.relu4 = nn.ReLU()
+        #self.mp4 = nn.MaxPool2d((3, 5))
+
+
+        # Layer 5
+        #self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
+        #self.bn5 = nn.BatchNorm2d(64)
+        #self.relu5 = nn.ReLU()
+        #self.mp5 = nn.MaxPool2d((4, 4))
+
+        #attention
+        self.attention1 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
+        self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
+
+        # Flatten and Dense
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear(347136, num_classes)  # Adjust input size based on your actual needs
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        # Spec transforms
+        # x = [batch, kernel, width, height]
+        x = self.spec(x)
+        x = self.to_db(x)
+        # x = x.unsqueeze(1)
+        x = self.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
+        #print(x.shape)
+        x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
+        #print(x.shape)
+        #x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
         #print(x.shape)
         #x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
         #print(x.shape)

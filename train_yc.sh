@@ -18,4 +18,4 @@
 source activate aml-project
 
 # Run script
-python train.py --model_class_name 'FCN5WithSelfAttention' --batch_size 16
+python train.py --model_class_name 'FCN2WithSelfAttention' --batch_size 16
