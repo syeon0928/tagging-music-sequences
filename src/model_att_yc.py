@@ -19,7 +19,7 @@ class SelfAttentionLayer(nn.Module):
         # x is [batch_size, num_channels, height, width]
         # 16, 128, 12, 28
         batch_size, num_channels, height, width = x.shape
-        print(x.shape)
+        #print(x.shape)
 
         # Reshape the input to (height * width, batch_size, num_channels)
         x_reshape = x.permute(2, 3, 0, 1).contiguous().view(height * width, batch_size, num_channels)
