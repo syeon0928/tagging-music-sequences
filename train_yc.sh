@@ -18,4 +18,6 @@
 source activate aml-project
 
 # Run script
-python train.py --model_class_name 'WaveCNN7WithSelfAttention' --epochs 50  --batch_size 16
+
+python train.py --model_class_name 'WaveCNN7WithSelfAttention' --epochs 10 --batch_size 16
+
