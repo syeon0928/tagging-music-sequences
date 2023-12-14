@@ -353,7 +353,7 @@ class MusicCNN(nn.Module):
 
 class FCN7TransferUnfreezed(nn.Module):
     def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
-        super(FCN7_Transfer_Unfreezed, self).__init__()
+        super(FCN7TransferUnfreezed, self).__init__()
 
         # Initialize the original FCN7 model
         self.original_fcn7 = FCN7(num_classes=50)
@@ -417,7 +417,7 @@ class FCN7TransferUnfreezed(nn.Module):
 
 class FCN7Transfer2Layers(nn.Module):
     def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
-        super(FCN7_Transfer_2Layers, self).__init__()
+        super(FCN7Transfer2Layers, self).__init__()
 
         # Initialize the original FCN7 model
         self.original_fcn7 = FCN7(num_classes=50)
@@ -476,7 +476,7 @@ class FCN7Transfer2Layers(nn.Module):
 
 class FCN7Transfer1Layer(nn.Module):
     def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
-        super(FCN7_Transfer_1Layer, self).__init__()
+        super(FCN7Transfer1Layer, self).__init__()
 
         # Initialize the original FCN7 model
         self.original_fcn7 = FCN7(num_classes=50)
