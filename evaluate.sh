@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name evaluation
-#SBATCH --output=logs/evaluation-results-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --output=logs/fcn7transferunfreezed-evaluation-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16        
 #SBATCH --mem=32G
@@ -16,7 +16,7 @@ module load Anaconda3
 source activate aml-project
 
 # Set params
-MODEL_PATH="models/FCN7_Transfer_unfreezed_best.pth"
+MODEL_PATH="models/FCN7TransferUnfreezed_best.pth"
 MODEL_CLASS_NAME="FCN7TransferUnfreezed"
 
 # Run script
