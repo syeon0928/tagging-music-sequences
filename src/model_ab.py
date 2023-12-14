@@ -351,9 +351,9 @@ class MusicCNN(nn.Module):
         return out
 
 
-class FCN7_Transfer(nn.Module):
+class FCN7TransferUnfreezed(nn.Module):
     def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
-        super(FCN7_Transfer, self).__init__()
+        super(FCN7_Transfer_Unfreezed, self).__init__()
 
         # Initialize the original FCN7 model
         self.original_fcn7 = FCN7(num_classes=50)
@@ -382,7 +382,125 @@ class FCN7_Transfer(nn.Module):
         )
 
     def load_pretrained_weights(self, path):
-        checkpoint = torch.load(path)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        checkpoint = torch.load(path, map_location=device)
+        self.original_fcn7.load_state_dict(checkpoint['model_state_dict'])
+
+    def forward(self, x):
+        # Pass input through the original model
+
+        # Spec transforms
+        x = self.original_fcn7.spec(x)
+        x = self.original_fcn7.to_db(x)
+        x = self.original_fcn7.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.original_fcn7.mp1(self.original_fcn7.relu1(self.original_fcn7.bn1(self.original_fcn7.conv1(x))))
+        x = self.original_fcn7.mp2(self.original_fcn7.relu2(self.original_fcn7.bn2(self.original_fcn7.conv2(x))))
+        x = self.original_fcn7.mp3(self.original_fcn7.relu3(self.original_fcn7.bn3(self.original_fcn7.conv3(x))))
+        x = self.original_fcn7.mp4(self.original_fcn7.relu4(self.original_fcn7.bn4(self.original_fcn7.conv4(x))))
+        x = self.original_fcn7.mp5(self.original_fcn7.relu5(self.original_fcn7.bn5(self.original_fcn7.conv5(x))))
+
+        # Apply additional 1x1 convolutional layers
+        x = self.original_fcn7.relu6(self.original_fcn7.bn6(self.original_fcn7.conv6(x)))
+        x = self.original_fcn7.relu7(self.original_fcn7.bn7(self.original_fcn7.conv7(x)))
+        
+        #Flatten the output to [batch_size, 32]
+        x = x.view(x.size(0), -1)
+
+        # Pass through new layers
+        x = self.new_layers(x)
+
+        return x
+
+
+class FCN7Transfer2Layers(nn.Module):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
+        super(FCN7_Transfer_2Layers, self).__init__()
+
+        # Initialize the original FCN7 model
+        self.original_fcn7 = FCN7(num_classes=50)
+
+        # Load the pre-trained weights
+        self.load_pretrained_weights(pre_trained_model_path)
+
+        # Freeze the parameters of the original model
+        for param in self.original_fcn7.parameters():
+            param.requires_grad = False
+
+        # Replace the last dense layer with new layers for the new task
+        # Assume the new task has 'num_classes_new_task' classes
+        self.new_layers = nn.Sequential(
+            nn.Linear(32, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, num_classes_new_task)
+        )
+
+    def load_pretrained_weights(self, path):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        checkpoint = torch.load(path, map_location=device)
+        self.original_fcn7.load_state_dict(checkpoint['model_state_dict'])
+
+    def forward(self, x):
+        # Pass input through the original model
+
+        # Spec transforms
+        x = self.original_fcn7.spec(x)
+        x = self.original_fcn7.to_db(x)
+        x = self.original_fcn7.spec_bn(x)
+
+        # Apply each layer in sequence
+        x = self.original_fcn7.mp1(self.original_fcn7.relu1(self.original_fcn7.bn1(self.original_fcn7.conv1(x))))
+        x = self.original_fcn7.mp2(self.original_fcn7.relu2(self.original_fcn7.bn2(self.original_fcn7.conv2(x))))
+        x = self.original_fcn7.mp3(self.original_fcn7.relu3(self.original_fcn7.bn3(self.original_fcn7.conv3(x))))
+        x = self.original_fcn7.mp4(self.original_fcn7.relu4(self.original_fcn7.bn4(self.original_fcn7.conv4(x))))
+        x = self.original_fcn7.mp5(self.original_fcn7.relu5(self.original_fcn7.bn5(self.original_fcn7.conv5(x))))
+
+        # Apply additional 1x1 convolutional layers
+        x = self.original_fcn7.relu6(self.original_fcn7.bn6(self.original_fcn7.conv6(x)))
+        x = self.original_fcn7.relu7(self.original_fcn7.bn7(self.original_fcn7.conv7(x)))
+        
+        #Flatten the output to [batch_size, 32]
+        x = x.view(x.size(0), -1)
+
+        # Pass through new layers
+        x = self.new_layers(x)
+
+        return x
+
+
+class FCN7Transfer1Layer(nn.Module):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
+        super(FCN7_Transfer_1Layer, self).__init__()
+
+        # Initialize the original FCN7 model
+        self.original_fcn7 = FCN7(num_classes=50)
+
+        # Load the pre-trained weights
+        self.load_pretrained_weights(pre_trained_model_path)
+
+        # Freeze the parameters of the original model
+        for param in self.original_fcn7.parameters():
+            param.requires_grad = False
+
+        # Replace the last dense layer with new layers for the new task
+        # Assume the new task has 'num_classes_new_task' classes
+        self.new_layers = nn.Sequential(
+            nn.Linear(32, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, num_classes_new_task)
+        )
+
+    def load_pretrained_weights(self, path):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        checkpoint = torch.load(path, map_location=device)
         self.original_fcn7.load_state_dict(checkpoint['model_state_dict'])
 
     def forward(self, x):
