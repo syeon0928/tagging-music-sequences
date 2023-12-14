@@ -297,7 +297,6 @@ class FCN5WithSelfAttention(nn.Module):
         # Dense
         x = self.dropout(x)
         x = self.dense(x)
-        print('training')
 
         return x
 
