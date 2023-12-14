@@ -1,21 +1,19 @@
 class Config(object):
     def __init__(self,
                  data_dir,
-                 train_annotations,
-                 val_annotations,
-                 test_annotations,
-                 sample_rate,
-                 target_length,
-                 batch_size,
-                 shuffle_train,
-                 shuffle_val,
-                 shuffle_test,
-                 num_workers,
-                 apply_augmentations,
-                 model_class_name,
-                 learning_rate,
-                 epochs,
-                 model_path):
+                 train_annotations=None,
+                 val_annotations=None,
+                 test_annotations=None,
+                 sample_rate=16000,
+                 target_length=29.1,
+                 batch_size=32,
+                 num_workers=0,
+                 apply_augmentations=False,
+                 model_class_name=None,
+                 learning_rate=None,
+                 epochs=None,
+                 model_path=None,
+                 results_dir=None):
         self.data_dir = data_dir
         self.train_annotations = train_annotations
         self.val_annotations = val_annotations
@@ -29,3 +27,4 @@ class Config(object):
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.model_path = model_path
+        self.results_dir = results_dir

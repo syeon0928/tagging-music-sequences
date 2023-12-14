@@ -9,12 +9,12 @@ from sklearn import metrics
 
 
 class Trainer:
-    def __init__(self, model, train_loader, valid_loader, learning_rate, transfer = False, device="cuda"):
+    def __init__(self, model, train_loader, valid_loader, learning_rate, transfer=False, device="cpu"):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else device)
         self.model = model.to(device)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
         self.learning_rate = learning_rate
-        self.device = device
         if transfer:
             self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()
