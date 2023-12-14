@@ -43,7 +43,7 @@ def main(config):
     if not os.path.exists(config.results_dir):
         os.makedirs(config.results_dir)
     model_name = os.path.basename(config.model_path).split('.')[0]
-    results_filename = os.path.join(config.results_dir, f"results-{model_name}.pkl")
+    results_filename = os.path.join(config.results_dir, f"{model_name}.pkl")
 
     # Save results to a file
     with open(results_filename, 'wb') as file:
