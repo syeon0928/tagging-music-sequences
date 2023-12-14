@@ -45,6 +45,7 @@ def main(config):
 
     # Initialize the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
     model_class = getattr(models, config.model_class_name)
     model = model_class().to(device)
 
