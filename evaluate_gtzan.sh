@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name evaluation
-#SBATCH --output=logs/fcn7transferunfreezed-evaluation-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --output=logs/gtzan-evaluation-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16        
 #SBATCH --mem=32G
@@ -18,7 +18,7 @@ source activate aml-project
 # Run script
 python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7TransferUnfreezed_best.pth" --model_class_name "FCN7TransferUnfreezed"
 
-python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer2layers_best.pth" --model_class_name "FCN7Transfer2Layers"
+python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer2Layers_best.pth" --model_class_name "FCN7Transfer2Layers"
 
-python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer1layer_best.pth" --model_class_name "FCN7Transfer1Layer"
+python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer1Layer_best.pth" --model_class_name "FCN7Transfer1Layer"
 

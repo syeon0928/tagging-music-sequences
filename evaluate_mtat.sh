@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name evaluation
-#SBATCH --output=logs/evaluation-results-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --output=logs/mtat-evaluation-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16        
 #SBATCH --mem=32G
