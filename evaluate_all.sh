@@ -15,7 +15,7 @@
 module load Anaconda3
 source activate aml-project
 
-CLASS_NAME_REGEX='WaveCNN[0-9]+WithSelfAttention|FCN[0-9]+WithSelfAttention|FCN[0-9]+Transfer[0-9A-Za-z]+|WaveCNN[0-9]+|FCN[0-9]+|MusicCNN'
+CLASS_NAME_REGEX='WaveCNN[0-9]+WithSelfAttention|FCN[0-9]+WithSelfAttention|WaveCNN[0-9]+|FCN[0-9]+|MusicCNN'
 
 # Run script
 for MODEL_PATH in models/*best*.pth; do
