@@ -17,9 +17,7 @@ class SelfAttentionLayer(nn.Module):
     def forward(self, x):
         # Get number of training examples
         # x is [batch_size, num_channels, height, width]
-        # 16, 64, 12, 28
-        print(x.shape)
-
+        # 16, 128, 12, 28
         batch_size, num_channels, height, width = x.shape
 
         # Reshape the input to (height * width, batch_size, num_channels)
@@ -31,32 +29,6 @@ class SelfAttentionLayer(nn.Module):
         # Reshape the output back to (batch_size, num_channels, height, width)
         out = out.view(height, width, batch_size, num_channels).permute(2, 3, 0, 1).contiguous()
 
-        # Transpose dimensions to match the original shape
-        #out = out.permute(0, 2, 3, 1)
-
-        # Transpose dimensions to match the einsum notation
-        #values = values.permute(0, 2, 3, 1)
-        #keys = keys.permute(0, 2, 3, 1)
-        #queries = queries.permute(0, 2, 3, 1)
-
-
-        # Perform the matrix multiplication
-        #energy = torch.matmul(queries.transpose(2, 3), keys)
-        #energy = energy.transpose(2, 3)
-
-        #attention = torch.softmax(energy / (self.head_dim ** (1 / 2)), dim=3)
-
-        # Transpose dimensions back to the original shape
-        #attention = attention.permute(0, 2, 3, 1)
-
-        # Perform the matrix multiplication
-        #out = torch.matmul(attention.transpose(2, 3), values.transpose(2, 3))
-        #out = out.transpose(2, 3)
-
-        # Reshape the output
-        #out = out.reshape(N, -1)
-
-        #out = self.fc_out(out)
         return out
 
 
@@ -90,8 +62,8 @@ class FCN5WithSelfAttention(nn.Module):
         self.mp2 = nn.MaxPool2d((2, 4))
 
         # Layer 3
-        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
         self.relu3 = nn.ReLU()
         self.mp3 = nn.MaxPool2d((2, 4))
 
@@ -109,8 +81,8 @@ class FCN5WithSelfAttention(nn.Module):
         #self.mp5 = nn.MaxPool2d((4, 4))
 
         #attention
-        self.attention1 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
-        self.attention2 = SelfAttentionLayer(in_dim=64, heads=attention_heads)
+        self.attention1 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
+        self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
        #self.attention1 = nn.MultiheadAttention(in_dim=64, heads=attention_heads)
 
         # Dense
@@ -118,7 +90,7 @@ class FCN5WithSelfAttention(nn.Module):
         #self.dropout = nn.Dropout(0.5)
         # Flatten and Dense
         self.flatten = nn.Flatten()
-        self.dense = nn.Linear(21504, num_classes)  # Adjust input size based on your actual needs
+        self.dense = nn.Linear(43008, num_classes)  # Adjust input size based on your actual needs
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
@@ -143,19 +115,14 @@ class FCN5WithSelfAttention(nn.Module):
         #print(x.shape)
 
         x = self.attention1(x)
-        print(x.shape)
         x = self.attention2(x)
-        print(x.shape)
 
-        # Dense
-        #print(x.shape)
         # Flatten
         x = self.flatten(x)
 
         # Dense
         x = self.dropout(x)
         x = self.dense(x)
-        print("training going")
 
         return x
 
@@ -211,66 +178,4 @@ class WaveCNN7WithSelfAttention(nn.Module):
 
         return x
 
-class SpecCNN7WithSelfAttention(nn.Module):
-
-    def __init__(self, sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
-                 num_classes=50,
-                 attention_heads=2):
-
-        super(SpecCNN7WithSelfAttention, self).__init__()
-        # Transform signal to mel spectrogram
-
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
-                                                         n_fft=n_fft,
-                                                         n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
-        self.spec_bn = nn.BatchNorm2d(1)
-
-        # Convolutional blocks
-        self.conv_blocks = nn.ModuleList()
-        in_channels = 1
-        out_channels = 128
-        for i in range(7):
-            if i == 3:  # 4th layer
-                out_channels = 256
-            if i == 6:  # Last layer
-                out_channels = 512
-
-            self.conv_blocks.append(nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1))
-            self.conv_blocks.append(nn.BatchNorm1d(out_channels))
-            self.conv_blocks.append(nn.ReLU())
-            self.conv_blocks.append(nn.MaxPool1d(kernel_size=3, stride=3))
-            in_channels = out_channels
-
-        # Global max pooling
-        self.global_max_pool = nn.AdaptiveMaxPool1d(1)
-
-        # Self-attention layers
-        self.self_attention1 = SelfAttentionLayer(in_dim=512, heads=attention_heads)
-        self.self_attention2 = SelfAttentionLayer(in_dim=512, heads=attention_heads)
-
-        # Fully connected layers
-        self.fc1 = nn.Linear(512, 256)
-        self.fc2 = nn.Linear(256, num_classes)
-
-    def forward(self, x):
-        # Convolutional blocks
-        for block in self.conv_blocks:
-            x = block(x)
-
-        # Global max pooling
-        x = self.global_max_pool(x)
-        x = x.view(x.size(0), -1)  # Flatten
-
-        # Self-attention layers
-        x = self.self_attention1(x, x, x, mask=None)
-        x = self.self_attention2(x, x, x, mask=None)
-
-        # Fully connected layers
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-
-        return x
 
