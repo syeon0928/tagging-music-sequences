@@ -21,7 +21,7 @@ CLASS_NAME_REGEX='WaveCNN[0-9]+WithSelfAttention|FCN[0-9]+WithSelfAttention|Wave
 for MODEL_PATH in models/*best*.pth; do
     # Extract the model class name from the filename
     FILENAME=$(basename "$MODEL_PATH")
-    MODEL_CLASS_NAME=$(echo $FILENAME | grep -o -E "CLASS_NAME_REGEX")
+    MODEL_CLASS_NAME=$(echo $FILENAME | grep -o -E "$CLASS_NAME_REGEX")
 
     if [ -z "$MODEL_CLASS_NAME" ]; then
         echo "Could not determine model class for $MODEL_PATH. Skipping."
