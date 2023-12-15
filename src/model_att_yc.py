@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+from .modules import Conv_1d, Conv_2d, Conv_V, Conv_H
 
 class SelfAttentionLayer(nn.Module):
     def __init__(self, in_dim, heads):
@@ -317,8 +318,10 @@ class SelfAttentionLayerWave(nn.Module):
         # Get number of training examples
         # x is [batch_size, num_channels, sequence_length]
         # 16, 512, 211
+        print(x.shape)
+
         batch_size, num_channels, sequence_length = x.shape
-        #print(x.shape)
+        print(x.shape)
 
         # Reshape the input to (sequence_length, batch_size, num_channels)
         x_reshape = x.permute(2, 0, 1).contiguous().view(sequence_length, batch_size, num_channels)
@@ -381,8 +384,6 @@ class WaveCNN7WithSelfAttention(nn.Module):
         # Fully connected layers
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        print("training")
 
         return x
-
 
