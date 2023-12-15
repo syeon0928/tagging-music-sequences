@@ -318,10 +318,10 @@ class SelfAttentionLayerWave(nn.Module):
         # Get number of training examples
         # x is [batch_size, num_channels, sequence_length]
         # 16, 512, 211
-        print(x.shape)
+        #print(x.shape)
 
         batch_size, num_channels, sequence_length = x.shape
-        print(x.shape)
+        #print(x.shape)
 
         # Reshape the input to (sequence_length, batch_size, num_channels)
         x_reshape = x.permute(2, 0, 1).contiguous().view(sequence_length, batch_size, num_channels)
@@ -387,3 +387,84 @@ class WaveCNN7WithSelfAttention(nn.Module):
 
         return x
 
+
+# Pons et al. 2017
+# End-to-end learning for music audio tagging at scale.
+# This is the updated implementation of the original paper. Referred to the Musicnn code.
+# https://github.com/jordipons/musicnn
+# https://github.com/minzwon/sota-music-tagging-models/blob/master/training/model.py
+class MusicCNNAttention(nn.Module):
+    def __init__(self,
+                 sample_rate=16000,
+                 n_fft=512,
+                 n_mels=96,
+                 num_classes=50,
+                 attention_heads=2
+                 ):
+        super(MusicCNNAttention, self).__init__()
+
+        # Transform signal to mel spectrogram
+        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
+        self.to_db = torchaudio.transforms.AmplitudeToDB()
+        self.spec_bn = nn.BatchNorm2d(1)
+
+        # frontend
+        # horizontal layers
+        m1 = Conv_V(1, 204, (int(0.7*96), 7))
+        m2 = Conv_V(1, 204, (int(0.4*96), 7))
+        # vertical layers
+        m3 = Conv_H(1, 51, 129)
+        m4 = Conv_H(1, 51, 65)
+        m5 = Conv_H(1, 51, 33)
+        self.layers = nn.ModuleList([m1, m2, m3, m4, m5])
+
+        # Additional layer to reduce the number of channels
+        reduction_channel = 512
+        self.channel_reduction = nn.Linear(561, reduction_channel)
+
+        # backend
+        backend_channel = 512
+        self.self_attention1 = SelfAttentionLayerWave(in_dim=512, heads=attention_heads)
+        self.self_attention2 = SelfAttentionLayerWave(in_dim=512, heads=attention_heads)
+
+        # Flatten and Dense
+        dense_channel = 200
+        self.dense1 = nn.Linear(512, dense_channel)
+        self.bn = nn.BatchNorm1d(dense_channel)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
+        self.dense2 = nn.Linear(dense_channel, num_classes)
+
+    def forward(self, x):
+        # Spectrogram
+        x = self.spec(x)
+        x = self.to_db(x)
+        x = self.spec_bn(x)
+
+        # frontend
+        y = []
+        for layer in self.layers:
+            y.append(layer(x))
+        y = torch.cat(y, dim=1)
+
+        y_reshape= y.permute(0, 2 ,1).contiguous()
+
+        # Reduce the number of channels
+        y_reduce = self.channel_reduction(y_reshape)
+
+        y = y_reduce.permute(0, 2, 1).contiguous()
+        length = y.size(2)
+
+        # Self-attention layers
+        y = self.self_attention1(y)
+        out = self.self_attention2(y)
+
+        # Global average pooling along the time dimension
+        out = torch.mean(out, dim=2)
+
+        # Dense layers
+        out = self.relu(self.bn(self.dense1(out)))
+        out = self.dropout(out)
+        out = self.dense2(out)
+
+        return out
