@@ -419,13 +419,13 @@ class MusicCNNAttention(nn.Module):
         self.layers = nn.ModuleList([m1, m2, m3, m4, m5])
 
         # Additional layer to reduce the number of channels
-        reduction_channel = 512
+        reduction_channel = 560
         self.channel_reduction = nn.Linear(561, reduction_channel)
 
         # backend
-        backend_channel = 512
-        self.self_attention1 = SelfAttentionLayerWave(in_dim=512, heads=attention_heads)
-        self.self_attention2 = SelfAttentionLayerWave(in_dim=512, heads=attention_heads)
+        backend_channel = 560
+        self.self_attention1 = SelfAttentionLayerWave(in_dim=560, heads=attention_heads)
+        self.self_attention2 = SelfAttentionLayerWave(in_dim=560, heads=attention_heads)
 
         # Flatten and Dense
         dense_channel = 200
@@ -459,12 +459,24 @@ class MusicCNNAttention(nn.Module):
         y = self.self_attention1(y)
         out = self.self_attention2(y)
 
-        # Global average pooling along the time dimension
-        out = torch.mean(out, dim=2)
+        mp = nn.MaxPool1d(length)(out)
+        avgp = nn.AvgPool1d(length)(out)
 
-        # Dense layers
+        out = torch.cat([mp, avgp], dim=1)
+        out = out.squeeze(2)
+
         out = self.relu(self.bn(self.dense1(out)))
         out = self.dropout(out)
         out = self.dense2(out)
+        print('train')
+
+
+        # Global average pooling along the time dimension
+        #out = torch.mean(out, dim=2)
+
+        # Dense layers
+        #out = self.relu(self.bn(self.dense1(out)))
+        #out = self.dropout(out)
+        #out = self.dense2(out)
 
         return out
