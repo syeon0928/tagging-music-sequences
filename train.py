@@ -50,7 +50,7 @@ def main(config):
     model = model_class().to(device)
 
     # Initialize the Trainer
-    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, config.transfer, device)
+    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, config.apply_transfer, device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)
