@@ -2,6 +2,7 @@ import argparse
 import random
 
 import torch
+import torchaudio.transforms as T
 
 import src.models as models
 from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
@@ -11,28 +12,6 @@ from src.trainer import Trainer
 
 def main(config):
 
-    if config.apply_augmentations:
-        augmentations = []
-        pitch_shift_steps = random.randint(-4, 4)
-        time_stretch_factor = random.uniform(0.8, 1.25)
-        if config.apply_augmentations:
-            augmentations.append(PitchShiftAugmentation(pitch_shift_steps))
-            augmentations.append(TimeStretchAugmentation(time_stretch_factor))
-    else:
-        augmentations = None
-
-    # Create dataloaders
-    train_loader = get_dataloader(
-        annotations_file=config.train_annotations,
-        data_dir=config.data_dir,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=config.num_workers,
-        sample_rate=config.sample_rate,
-        target_length=config.target_length,
-        augmentation=augmentations,
-    )
-
     val_loader = get_dataloader(
         annotations_file=config.val_annotations,
         data_dir=config.data_dir,
@@ -41,6 +20,7 @@ def main(config):
         num_workers=config.num_workers,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
+        apply_transformations=config.apply_transformations,
     )
 
     # Initialize the model
@@ -50,7 +30,19 @@ def main(config):
     model = model_class().to(device)
 
     # Initialize the Trainer
-    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, config.apply_transfer, device)
+    trainer = Trainer(model,
+                      config.train_annotations,
+                      config.data_dir,
+                      config.batch_size,
+                      config.num_workers,
+                      config.sample_rate,
+                      config.target_length,
+                      config.apply_transformations,
+                      config.apply_augmentations,
+                      val_loader,
+                      config.learning_rate,
+                      config.apply_transfer,
+                      device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)
@@ -70,6 +62,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=0)
+    parser.add_argument("--apply_transformations", action="store_true")
     parser.add_argument("--apply_augmentations", action="store_true")
     parser.add_argument("--apply_transfer", action="store_true")
 

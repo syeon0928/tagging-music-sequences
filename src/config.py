@@ -8,6 +8,7 @@ class Config(object):
                  target_length=29.1,
                  batch_size=32,
                  num_workers=0,
+                 apply_transformations=False,
                  apply_augmentations=False,
                  apply_transfer=False,
                  model_class_name=None,
@@ -23,6 +24,7 @@ class Config(object):
         self.target_length = target_length
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.apply_transformations = apply_transformations
         self.apply_augmentations = apply_augmentations
         self.apply_transfer = apply_transfer
         self.model_class_name = model_class_name
