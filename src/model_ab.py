@@ -302,7 +302,8 @@ class MusicCNN(nn.Module):
         return out
 
 
-FCN_best_model_path ='models/FCN7_best.pth'
+FCN_best_model_path ='models/FCN7_best_aug.pth'
+
 class FCN7TransferUnfreezed(nn.Module):
     def __init__(self, num_classes_new_task=10, pre_trained_model_path=FCN_best_model_path):
         super(FCN7TransferUnfreezed, self).__init__()
