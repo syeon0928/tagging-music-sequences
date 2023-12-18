@@ -13,17 +13,17 @@ from src import audio_dataset
 class Trainer:
     def __init__(self, 
                  model,
-                 annotations_file,
-                 data_dir,
-                 batch_size,
-                 num_workers,
-                 sample_rate,
-                 target_length,
-                 apply_transformations,
-                 apply_augmentations,
-                 valid_loader,
-                 learning_rate,
-                 transfer=False,
+                 annotations_file=None,
+                 data_dir=None,
+                 batch_size=16,
+                 num_workers=0,
+                 sample_rate=16000,
+                 target_length=29.1,
+                 apply_transformations=False,
+                 apply_augmentations=False,
+                 valid_loader=None,
+                 learning_rate=0.001,
+                 apply_transfer=False,
                  device="cuda"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else device)
         self.model = model.to(device)
@@ -38,7 +38,7 @@ class Trainer:
         self.valid_loader = valid_loader
         self.learning_rate = learning_rate
 
-        if transfer:
+        if apply_transfer:
             self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)

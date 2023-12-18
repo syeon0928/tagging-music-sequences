@@ -6,11 +6,6 @@ import src.models as models
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
 
-def evaluate_model(model, model_path, test_loader, device):
-    trainer = Trainer(model, train_loader=None, valid_loader=None, learning_rate=0.001, device=device)
-    trainer.load_model(model_path)
-    return trainer.evaluate(test_loader)
-
 def main(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -27,10 +22,13 @@ def main(config):
         num_workers=config.num_workers,
         sample_rate=config.sample_rate,
         target_length=config.target_length,
+        apply_transformations=config.apply_transformations
     )
 
     # Evaluate the model
-    evaluation_results = evaluate_model(model, config.model_path, test_loader, device)
+    trainer = Trainer(model, apply_transfer=config.apply_transfer, device=device)
+    trainer.load_model(config.model_path)
+    evaluation_results = trainer.evaluate(test_loader)
 
     # Print results
     avg_loss, roc_auc, pr_auc, predicted_labels, true_labels, filepaths = evaluation_results
@@ -62,6 +60,9 @@ if __name__ == "__main__":
     parser.add_argument("--target_length", type=float, default=29.1)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--num_workers", type=int, default=0)
+
+    parser.add_argument("--apply_transformations", action="store_true")
+    parser.add_argument("--apply_transfer", action="store_true")
 
     parser.add_argument("--model_class_name", type=str, help="Model class to evaluate")
 
