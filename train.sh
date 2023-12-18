@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name training
-#SBATCH --output=scripts/model-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --output=scripts/transfer-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16        
 #SBATCH --mem=32G
@@ -16,4 +16,9 @@ module load Anaconda3
 source activate aml-project
 
 # Run script
-python train.py --model_class_name="FCN7_Transfer" --num_workers=16 --train_annotations='gtzan_train_label.csv' --val_annotations='gtzan_val_label.csv' --test_annotations='gtzan_test_label.csv'
+
+python train.py --model_class_name="FCN7Transfer1Layer" --apply_transformations --num_workers=16 --apply_transfer --train_annotations='gtzan_train_label.csv' --val_annotations='gtzan_val_label.csv' --test_annotations='gtzan_test_label.csv'
+
+python train.py --model_class_name="FCN7Transfer2Layers" --apply_transformations --num_workers=16 --apply_transfer --train_annotations='gtzan_train_label.csv' --val_annotations='gtzan_val_label.csv' --test_annotations='gtzan_test_label.csv'
+
+python train.py --model_class_name="FCN7TransferUnfreezed" --apply_transformations --num_workers=16 --apply_transfer --train_annotations='gtzan_train_label.csv' --val_annotations='gtzan_val_label.csv' --test_annotations='gtzan_test_label.csv'
