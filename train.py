@@ -5,7 +5,6 @@ import torch
 import torchaudio.transforms as T
 
 import src.models as models
-from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 from src.audio_dataset import get_dataloader
 from src.trainer import Trainer
 
@@ -42,7 +41,7 @@ def main(config):
                       val_loader,
                       config.learning_rate,
                       config.apply_transfer,
-                      device)
+                      device=device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)

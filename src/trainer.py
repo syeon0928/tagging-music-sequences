@@ -24,8 +24,8 @@ class Trainer:
                  valid_loader=None,
                  learning_rate=0.001,
                  apply_transfer=False,
-                 device="cuda"):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else device)
+                 device=None):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(device)
         self.annotations_file=annotations_file
         self.data_dir=data_dir
