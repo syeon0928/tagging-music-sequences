@@ -1,7 +1,9 @@
 import os
+import random
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
+import torchaudio.transforms as T
 from src import audio_util
 from src.audio_augmentations import PitchShiftAugmentation, TimeStretchAugmentation
 
@@ -13,13 +15,15 @@ class AudioDS(Dataset):
             data_dir,
             target_sample_rate=16000,
             target_length=29.1,
-            augmentation=None,
+            apply_transformations=False,
+            apply_augmentations=False,
     ):
         self.annotations_file = annotations_file
         self.data_dir = data_dir
         self.sample_rate = target_sample_rate
         self.target_length = target_length
-        self.augmentation = augmentation
+        self.apply_transformations = apply_transformations
+        self.apply_augmentations = apply_augmentations
 
         # Load annotations using pandas
         self.annotations_file = pd.read_csv(os.path.join(data_dir, annotations_file), index_col=0).reset_index(
@@ -48,10 +52,24 @@ class AudioDS(Dataset):
         signal, sample_rate = audio_util.resample(signal, sample_rate, self.sample_rate)
         signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
 
-        if self.augmentation:
-            for aug in self.augmentation:
-                signal = aug.apply(signal, sample_rate)
-                signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
+        # transform to mel spec
+        if self.apply_transformations:
+            transformations = torch.nn.Sequential(
+                T.MelSpectrogram(sample_rate=sample_rate, 
+                            n_fft=512, 
+                            n_mels=96),
+                T.AmplitudeToDB())
+            signal = transformations(signal)
+
+            # augment mel spec (we only do augmentation on mel spec)
+            if self.apply_augmentations:
+                # stretch_factor = random.uniform(0.8, 1.25)
+                augmentations = torch.nn.Sequential(
+                    # T.TimeStretch(stretch_factor, fixed_rate=True),
+                    T.FrequencyMasking(freq_mask_param=20),
+                    T.TimeMasking(time_mask_param=80)
+                )
+                signal = augmentations(signal)
 
         return signal, label, audio_file
 
@@ -77,7 +95,8 @@ def get_dataloader(
         num_workers,
         sample_rate,
         target_length,
-        augmentation=None,
+        apply_transformations=False,
+        apply_augmentations=False,
 ):
 
     dataset = AudioDS(
@@ -85,7 +104,8 @@ def get_dataloader(
         data_dir=data_dir,
         target_sample_rate=sample_rate,
         target_length=target_length,
-        augmentation=augmentation,
+        apply_transformations=apply_transformations,
+        apply_augmentations=apply_augmentations,
     )
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)

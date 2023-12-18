@@ -7,16 +7,10 @@ from .modules import Conv_1d, Conv_2d, Conv_V, Conv_H
 
 class FCN3(nn.Module):
     def __init__(self,
-                 sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
                  num_classes=50
                  ):
         super(FCN3, self).__init__()
 
-        # Transform signal to mel spectrogram
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
         # Layer 1
@@ -42,8 +36,6 @@ class FCN3(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = self.spec(x)
-        x = self.to_db(x)
         x = self.spec_bn(x)
 
         x = self.mp1(self.relu1(self.bn1(self.conv1(x))))
@@ -59,18 +51,10 @@ class FCN3(nn.Module):
 
 class FCN4(nn.Module):
     def __init__(self,
-                 sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
                  num_classes=50
                  ):
         super(FCN4, self).__init__()
 
-        # Transform signal to mel spectrogram
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
-                                                         n_fft=n_fft,
-                                                         n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
         # Layer 1
@@ -102,9 +86,6 @@ class FCN4(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        # Spec transforms
-        x = self.spec(x)
-        x = self.to_db(x)
         x = self.spec_bn(x)
 
         # Apply each layer in sequence
@@ -126,18 +107,10 @@ class FCN4(nn.Module):
 # https://github.com/minzwon/sota-music-tagging-models
 class FCN5(nn.Module):
     def __init__(self,
-                 sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
                  num_classes=50
                  ):
         super(FCN5, self).__init__()
 
-        # Transform signal to mel spectrogram
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate,
-                                                         n_fft=n_fft,
-                                                         n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
         # Layer 1
@@ -175,10 +148,6 @@ class FCN5(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        # Spec transforms
-        x = self.spec(x)
-        x = self.to_db(x)
-        # x = x.unsqueeze(1)
         x = self.spec_bn(x)
 
         # Apply each layer in sequence
@@ -197,16 +166,10 @@ class FCN5(nn.Module):
 
 class FCN7(nn.Module):
     def __init__(self,
-                 sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
                  num_classes=50
                  ):
         super(FCN7, self).__init__()
 
-        # Transform signal to mel spectrogram
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
         # Layer 1
@@ -253,9 +216,6 @@ class FCN7(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        # Spec transforms
-        x = self.spec(x)
-        x = self.to_db(x)
         x = self.spec_bn(x)
 
         # Apply each layer in sequence
@@ -283,16 +243,10 @@ class FCN7(nn.Module):
 # https://github.com/minzwon/sota-music-tagging-models/blob/master/training/model.py
 class MusicCNN(nn.Module):
     def __init__(self,
-                 sample_rate=16000,
-                 n_fft=512,
-                 n_mels=96,
                  num_classes=50
                  ):
         super(MusicCNN, self).__init__()
 
-        # Transform signal to mel spectrogram
-        self.spec = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=n_fft, n_mels=n_mels)
-        self.to_db = torchaudio.transforms.AmplitudeToDB()
         self.spec_bn = nn.BatchNorm2d(1)
 
         # frontend
@@ -320,9 +274,6 @@ class MusicCNN(nn.Module):
         self.dense2 = nn.Linear(dense_channel, num_classes)
 
     def forward(self, x):
-        # Spectrogram
-        x = self.spec(x)
-        x = self.to_db(x)
         x = self.spec_bn(x)
 
         # frontend
@@ -351,8 +302,9 @@ class MusicCNN(nn.Module):
         return out
 
 
+FCN_best_model_path ='models/FCN7_best.pth'
 class FCN7TransferUnfreezed(nn.Module):
-    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path=FCN_best_model_path):
         super(FCN7TransferUnfreezed, self).__init__()
 
         # Initialize the original FCN7 model
@@ -390,9 +342,6 @@ class FCN7TransferUnfreezed(nn.Module):
     def forward(self, x):
         # Pass input through the original model
 
-        # Spec transforms
-        x = self.original_fcn7.spec(x)
-        x = self.original_fcn7.to_db(x)
         x = self.original_fcn7.spec_bn(x)
 
         # Apply each layer in sequence
@@ -416,7 +365,7 @@ class FCN7TransferUnfreezed(nn.Module):
 
 
 class FCN7Transfer2Layers(nn.Module):
-    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path=FCN_best_model_path):
         super(FCN7Transfer2Layers, self).__init__()
 
         # Initialize the original FCN7 model
@@ -449,9 +398,6 @@ class FCN7Transfer2Layers(nn.Module):
     def forward(self, x):
         # Pass input through the original model
 
-        # Spec transforms
-        x = self.original_fcn7.spec(x)
-        x = self.original_fcn7.to_db(x)
         x = self.original_fcn7.spec_bn(x)
 
         # Apply each layer in sequence
@@ -475,7 +421,7 @@ class FCN7Transfer2Layers(nn.Module):
 
 
 class FCN7Transfer1Layer(nn.Module):
-    def __init__(self, num_classes_new_task=10, pre_trained_model_path='models/FCN7_best_l2_20231201-2215.pth'):
+    def __init__(self, num_classes_new_task=10, pre_trained_model_path=FCN_best_model_path):
         super(FCN7Transfer1Layer, self).__init__()
 
         # Initialize the original FCN7 model
@@ -506,9 +452,6 @@ class FCN7Transfer1Layer(nn.Module):
     def forward(self, x):
         # Pass input through the original model
 
-        # Spec transforms
-        x = self.original_fcn7.spec(x)
-        x = self.original_fcn7.to_db(x)
         x = self.original_fcn7.spec_bn(x)
 
         # Apply each layer in sequence

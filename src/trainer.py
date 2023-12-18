@@ -7,14 +7,37 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn import metrics
 
+from src import audio_dataset
+
 
 class Trainer:
-    def __init__(self, model, train_loader, valid_loader, learning_rate, transfer=False, device="cuda"):
+    def __init__(self, 
+                 model,
+                 annotations_file,
+                 data_dir,
+                 batch_size,
+                 num_workers,
+                 sample_rate,
+                 target_length,
+                 apply_transformations,
+                 apply_augmentations,
+                 valid_loader,
+                 learning_rate,
+                 transfer=False,
+                 device="cuda"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else device)
         self.model = model.to(device)
-        self.train_loader = train_loader
+        self.annotations_file=annotations_file
+        self.data_dir=data_dir
+        self.batch_size=batch_size
+        self.num_workers=num_workers
+        self.sample_rate=sample_rate
+        self.target_length=target_length
+        self.apply_transformations=apply_transformations
+        self.apply_augmentations=apply_augmentations
         self.valid_loader = valid_loader
         self.learning_rate = learning_rate
+
         if transfer:
             self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()
@@ -45,8 +68,21 @@ class Trainer:
             predicted_labels_train = []
             true_labels_train = []
 
+            # data loader part
+            train_loader = audio_dataset.get_dataloader(
+                annotations_file=self.annotations_file,
+                data_dir=self.data_dir,
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=self.num_workers,
+                sample_rate=self.sample_rate,
+                target_length=self.target_length,
+                apply_transformations=self.apply_transformations,
+                apply_augmentations=self.apply_augmentations
+            )
+
             # iterate over batches
-            for batch, labels, filepath in self.train_loader:
+            for batch, labels, _ in train_loader:
                 batch, labels = batch.to(self.device), labels.to(self.device)
 
                 # train
@@ -64,7 +100,7 @@ class Trainer:
                 true_labels_train.append(labels.cpu().numpy())
 
             # Retrieve training metrics
-            avg_loss_train = total_loss_train / len(self.train_loader)
+            avg_loss_train = total_loss_train / len(train_loader)
             train_roc_auc, train_pr_auc = self.get_auc(predicted_labels_train, true_labels_train)
 
             # Store train metrics
