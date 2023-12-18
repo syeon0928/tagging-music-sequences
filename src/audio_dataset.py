@@ -13,13 +13,15 @@ class AudioDS(Dataset):
             data_dir,
             target_sample_rate=16000,
             target_length=29.1,
-            augmentation=None,
+            transformations=None,
+            augmentations=None,
     ):
         self.annotations_file = annotations_file
         self.data_dir = data_dir
         self.sample_rate = target_sample_rate
         self.target_length = target_length
-        self.augmentation = augmentation
+        self.transformations = transformations
+        self.augmentations = augmentations
 
         # Load annotations using pandas
         self.annotations_file = pd.read_csv(os.path.join(data_dir, annotations_file), index_col=0).reset_index(
@@ -48,10 +50,13 @@ class AudioDS(Dataset):
         signal, sample_rate = audio_util.resample(signal, sample_rate, self.sample_rate)
         signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
 
-        if self.augmentation:
-            for aug in self.augmentation:
-                signal = aug.apply(signal, sample_rate)
-                signal, sample_rate = audio_util.pad_or_trunc(signal, sample_rate, self.target_length)
+        # transform to mel spec
+        if self.transformations:
+            signal = self.transformations(signal)
+
+            # augment mel spec (we only do augmentation on mel spec)
+            if self.augmentations:
+                signal = self.augmentations(signal)
 
         return signal, label, audio_file
 
@@ -77,7 +82,8 @@ def get_dataloader(
         num_workers,
         sample_rate,
         target_length,
-        augmentation=None,
+        transformations=None,
+        augmentations=None,
 ):
 
     dataset = AudioDS(
@@ -85,7 +91,8 @@ def get_dataloader(
         data_dir=data_dir,
         target_sample_rate=sample_rate,
         target_length=target_length,
-        augmentation=augmentation,
+        transformations=transformations,
+        augmentations=augmentations,
     )
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
