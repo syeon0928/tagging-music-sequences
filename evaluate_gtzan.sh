@@ -16,9 +16,11 @@ module load Anaconda3
 source activate aml-project
 
 # Run script
-python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7TransferUnfreezed_best_20231218-1256.pth" --model_class_name "FCN7TransferUnfreezed"
+python evaluate.py --test_annotations "gtzan_test_label.csv" --apply_transformations --apply_transfer --model_path="models/FCN7TransferUnfreezed_best.pth" --model_class_name "FCN7TransferUnfreezed"
 
-python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer2Layers_best_20231218-1253.pth" --model_class_name "FCN7Transfer2Layers"
+python evaluate.py --test_annotations "gtzan_test_label.csv" --apply_transformations --apply_transfer --model_path="models/FCN7TransferUnfreezed_aug_best.pth" --model_class_name "FCN7TransferUnfreezed"
 
-python evaluate.py --test_annotations "gtzan_test_label.csv" --model_path "models/FCN7Transfer1Layer_best_20231218-1253.pth" --model_class_name "FCN7Transfer1Layer"
+python evaluate.py --test_annotations "gtzan_test_label.csv" --apply_transformations --apply_transfer --model_path="models/FCN7Transfer2Layers_best.pth" --model_class_name "FCN7Transfer2Layers"
+
+python evaluate.py --test_annotations "gtzan_test_label.csv" --apply_transformations --apply_transfer --model_path="models/FCN7Transfer1Layer_best.pth" --model_class_name "FCN7Transfer1Layer"
 
