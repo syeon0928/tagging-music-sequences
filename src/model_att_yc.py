@@ -429,7 +429,7 @@ class MusicCNNAttention(nn.Module):
 
         # Flatten and Dense
         dense_channel = 200
-        self.dense1 = nn.Linear(512, dense_channel)
+        self.dense1 = nn.Linear(1120, dense_channel)
         self.bn = nn.BatchNorm1d(dense_channel)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.5)
