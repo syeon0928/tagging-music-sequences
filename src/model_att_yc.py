@@ -69,19 +69,6 @@ class FCN3WithSelfAttention(nn.Module):
         self.relu3 = nn.ReLU()
         self.mp3 = nn.MaxPool2d((2, 4))
 
-        # Layer 4
-        #self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1)
-        #self.bn4 = nn.BatchNorm2d(128)
-        #self.relu4 = nn.ReLU()
-        #self.mp4 = nn.MaxPool2d((3, 5))
-
-
-        # Layer 5
-        #self.conv5 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1)
-        #self.bn5 = nn.BatchNorm2d(64)
-        #self.relu5 = nn.ReLU()
-        #self.mp5 = nn.MaxPool2d((4, 4))
-
         #attention
         self.attention1 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
         self.attention2 = SelfAttentionLayer(in_dim=128, heads=attention_heads)
@@ -105,11 +92,6 @@ class FCN3WithSelfAttention(nn.Module):
         x = self.mp2(self.relu2(self.bn2(self.conv2(x))))
         #print(x.shape)
         x = self.mp3(self.relu3(self.bn3(self.conv3(x))))
-        #print(x.shape)
-        #x = self.mp4(self.relu4(self.bn4(self.conv4(x))))
-        #print(x.shape)
-        #x = self.mp5(self.relu5(self.bn5(self.conv5(x))))
-        #print(x.shape)
 
         x = self.attention1(x)
         x = self.attention2(x)
