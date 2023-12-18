@@ -9,6 +9,7 @@ class Config(object):
                  batch_size=32,
                  num_workers=0,
                  apply_augmentations=False,
+                 apply_transfer=False,
                  model_class_name=None,
                  learning_rate=None,
                  epochs=None,
@@ -23,6 +24,7 @@ class Config(object):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.apply_augmentations = apply_augmentations
+        self.apply_transfer = apply_transfer
         self.model_class_name = model_class_name
         self.learning_rate = learning_rate
         self.epochs = epochs

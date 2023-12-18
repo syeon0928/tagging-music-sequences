@@ -50,7 +50,7 @@ def main(config):
     model = model_class().to(device)
 
     # Initialize the Trainer
-    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, device)
+    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, config.transfer, device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)
@@ -71,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--apply_augmentations", action="store_true")
+    parser.add_argument("--apply_transfer", action="store_true")
 
     parser.add_argument("--model_class_name", type=str, default="FCN5")
     parser.add_argument("--learning_rate", type=float, default=0.001)
