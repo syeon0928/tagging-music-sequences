@@ -12,39 +12,6 @@ from src.trainer import Trainer
 
 def main(config):
 
-    if config.apply_transformations:
-        transformations = torch.nn.Sequential(
-            T.MelSpectrogram(sample_rate=config.sample_rate, 
-                            n_fft=512, 
-                            n_mels=96),
-            T.AmplitudeToDB()
-    )
-    else:
-        transformations = None
-
-    if config.apply_transformations and config.apply_augmentations:
-        stretch_factor = random.uniform(0.8, 1.25)
-        augmentations = torch.nn.Sequential(
-            T.TimeStretch(stretch_factor, fixed_rate=True),
-            T.FrequencyMasking(freq_mask_param=80),
-            T.TimeMasking(time_mask_param=80)
-        )
-    else:
-        augmentations = None
-
-    # Create dataloaders
-    train_loader = get_dataloader(
-        annotations_file=config.train_annotations,
-        data_dir=config.data_dir,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=config.num_workers,
-        sample_rate=config.sample_rate,
-        target_length=config.target_length,
-        transformations=transformations,
-        augmentations=augmentations,
-    )
-
     val_loader = get_dataloader(
         annotations_file=config.val_annotations,
         data_dir=config.data_dir,
@@ -52,8 +19,8 @@ def main(config):
         shuffle=False,
         num_workers=config.num_workers,
         sample_rate=config.sample_rate,
-        transformations=transformations,
         target_length=config.target_length,
+        apply_transformations=config.apply_transformations,
     )
 
     # Initialize the model
@@ -63,7 +30,19 @@ def main(config):
     model = model_class().to(device)
 
     # Initialize the Trainer
-    trainer = Trainer(model, train_loader, val_loader, config.learning_rate, config.apply_transfer, device)
+    trainer = Trainer(model,
+                      config.train_annotations,
+                      config.data_dir,
+                      config.batch_size,
+                      config.num_workers,
+                      config.sample_rate,
+                      config.target_length,
+                      config.apply_transformations,
+                      config.apply_augmentations,
+                      val_loader,
+                      config.learning_rate,
+                      config.apply_transfer,
+                      device)
 
     # Run training
     trainer.train(config.epochs, config.model_path)
