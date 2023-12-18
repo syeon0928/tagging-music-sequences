@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name bert
-#SBATCH --output=scripts/att-wave-%j.out                # Name of output file (%j expands to jobId)
+#SBATCH --job-name music
+#SBATCH --output=scripts/MusicCNNWA-%j.out                # Name of output file (%j expands to jobId)
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=16
 #SBATCH --exclude=desktop[1-16,21,23-24]
@@ -18,4 +18,4 @@
 source activate aml-project
 
 # Run script
-python train.py --model_class_name 'FCN5WithSelfAttention' --epochs 10 --batch_size 16
+python train.py --model_class_name 'MusicCNNAttention' --epochs 10 --batch_size 16
